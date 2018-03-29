@@ -6,8 +6,8 @@
 ## Technologies / Features ## 
 
 - [ ] Spring Framework
-- [x] Spring Boot
-- [x] Spring Boot Property Configuration <=> *.yml
+    - [x] Spring Boot
+    - [x] Spring Boot Property Configuration <=> *.yml
 
 
             - [x] MVC Application structure best practices
