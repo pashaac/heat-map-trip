@@ -1,0 +1,4 @@
+2018-03-24 12:36:55.622 INFO  org.glowroot - Glowroot version: 0.10.5, built 2018-03-09 01:06:48 +0000
+2018-03-24 12:36:55.625 INFO  org.glowroot - Java version: 1.8.0_161
+2018-03-24 12:36:56.873 INFO  org.glowroot - plugins loaded: Cassandra Plugin, Elasticsearch Plugin, Executor Plugin, Grails Plugin, Hibernate Plugin, HTTP Client Plugin, Java HTTP Server Plugin, JAX-RS Plugin, Jdbc Plugin, JMS Plugin, JSF Plugin, JSP Plugin, Logger Plugin, Play Plugin, Netty Plugin, Quartz Plugin, Redis Plugin, Servlet Plugin, Spring Plugin, Struts Plugin
+2018-03-24 12:37:01.370 INFO  org.glowroot - UI listening on 127.0.0.1:4000 (to access the UI from remote machines, change the bind address to 0.0.0.0, either in the Glowroot UI under Configuration > Web or directly in the admin.json file, and then restart JVM to take effect)

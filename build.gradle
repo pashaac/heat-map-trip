@@ -1,0 +1,74 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.10.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+
+
+group = 'ru.ifmo.pashaac.heat.map.trip'
+version = '1.0.0'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	googleLibVersion = '0.2.6'
+	swaggerVersion = '2.8.0'
+}
+
+dependencies {
+
+
+	// Spring boot
+	compile('org.springframework.boot:spring-boot-starter-actuator')
+	compile('org.springframework.boot:spring-boot-starter-cache')
+	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+	compile('org.springframework.boot:spring-boot-starter-web')
+
+	// Spring boot + Properties
+	compile "org.springframework.boot:spring-boot-configuration-processor"
+
+	// Google
+	compile "com.google.maps:google-maps-services:${googleLibVersion}"
+
+	// Swagger
+	compile "io.springfox:springfox-swagger2:${swaggerVersion}"
+	compile "io.springfox:springfox-swagger-ui:${swaggerVersion}"
+
+	// PostgreSQL
+	runtime('org.postgresql:postgresql')
+
+	// Lombok
+	compileOnly('org.projectlombok:lombok')
+
+	// QA
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Camden.SR7'
+	}
+}
+
+bootRun {
+	jvmArgs = ["-javaagent:$buildDir/resources/main/libs/glowroot/glowroot.jar"]
+}
+

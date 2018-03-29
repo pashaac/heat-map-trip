@@ -1,0 +1,19 @@
+# ===============================
+# = GOOGLE
+# ===============================
+google:
+  api:
+    key: AIzaSyA0bOrpaALYb-6caX32Da5KASA94zAoSik
+    read-timeout: 1500
+    write-timeout: 1500
+    connect-timeout: 3000
+    requests-limit: 10
+
+# ===============================
+# = Venue Source Categories
+# ===============================
+venue:
+  category:
+    google:
+      park: park
+

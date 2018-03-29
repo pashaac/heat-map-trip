@@ -1,0 +1,57 @@
+<head>
+    <!--JS -->
+    <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAihcW7K9WRbC_XRQ-qxCJqgSHeeN_97Rw"></script>
+    <script type="text/javascript" src="bower_components/heatmap.js-amd/build/heatmap.js"></script>
+    <script type="text/javascript" src="bower_components/heatmap.js-amd/plugins/gmaps-heatmap/gmaps-heatmap.js"></script>
+    <!--HTML-->
+    <link rel="import" href="bower_components/google-map/google-map.html">
+    <!--CSS-->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="google-map"></div>
+<script>
+    var map = new google.maps.Map(document.getElementById('google-map'), {
+        center: {lat: 59.957570, lng: 30.307946},
+        // center: {lat: 25.6586, lng: -80.3568},
+        zoom: 12,
+        language: 'ru'
+    });
+    heatmap = new HeatmapOverlay(map,
+        {
+            "radius": 0.01,
+            "maxOpacity": 0.7,
+            "scaleRadius": true,
+            "useLocalExtrema": true,
+            latField: 'lat',
+            lngField: 'lng',
+            valueField: 'rating'
+        }
+    );
+
+
+    jQuery.ajax({
+        type: "GET",
+        dataType: "json",
+        url: "http://localhost:8080/venue/api/call?latitude=59.957570&longitude=30.307946&radius=2000&source=GOOGLE",
+        success: function (venues) {
+            var testData = {max: 0, data: []};
+            venues.forEach(function (venue) {
+                console.log(venue);
+                testData.data.push({
+                    lat: venue.location.latitude,
+                    lng: venue.location.longitude,
+                    rating: venue.rating});
+                    // count: parseInt(parseFloat(venue.rating) * 10, 10)                 });
+            });
+            console.log(testData);
+            heatmap.setData(testData);
+        }
+    })
+
+</script>
+</body>
+
