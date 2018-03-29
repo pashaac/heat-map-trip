@@ -5,27 +5,24 @@
 
 ## Technologies / Features ## 
 
-- [ ] Spring Framework
+- [x] Spring Framework
     - [x] Spring Boot
-    - [x] Spring Boot Property Configuration <=> *.yml
-
-
-            - [x] MVC Application structure best practices
-            - [] HikariCP   
-        - [x] Gradle
+    - [x] Spring Boot Property Configuration + *.yml
+    - [x] Spring MVC project structure best practices
+- [x] Gradle
+- [x] Swagger UI tool for API visualization 
+- [x] Lombok plugin (@Get / @Set / @Builder / @SneakyThrows / @Slf4j)
+- [] PostgreSQL
+    - [] HikariCP   
+- [x] Bower WEB build tool
+- [x] WebComponents
+- [x] Material design
+- [x] Google Polymer
+     
+        
         - [] Monitoring (*Glowroot*)
             - [x] Rest calls
             - [] Heap
             - [] CPU
             - [] DB 
-        - [x] Swagger UI tool to service API visualization 
-        - [] Lombok
-            - [x] @Get / @Set / @Builder / 
-            - [x] @SneakyThrows
-            - [x] @Slf4j
-        - [] PostgreSQL 
-        - [] Bower 
-            - [x] WebComponents
-            - [x] Material design
-            - [x] Google Polymer   
-            - []   
+        

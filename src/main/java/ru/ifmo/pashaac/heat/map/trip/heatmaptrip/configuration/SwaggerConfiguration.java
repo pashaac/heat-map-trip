@@ -34,7 +34,7 @@ public class SwaggerConfiguration {
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
                 .title("Heat-Map-Trip")
-                .description("Geo worldwide service to visualise / analyze tourist attractions / venues")
+                .description("Geo worldwide service to visualise / analyze tourist attractions / venues impact")
                 .contact(new Contact("Pavel Asadchiy", "https://vk.com/pasha_ac", "pavel.asadchiy@gmail.com"))
                 .version("1.0")
                 .build();

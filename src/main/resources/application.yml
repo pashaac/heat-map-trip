@@ -8,6 +8,8 @@ google:
     write-timeout: 1500
     connect-timeout: 3000
     requests-limit: 10
+    venue-limit: 20
+    call-fail-delay: 1500
 
 # ===============================
 # = Venue Source Categories

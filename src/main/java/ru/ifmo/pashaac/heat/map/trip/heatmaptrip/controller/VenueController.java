@@ -15,6 +15,7 @@ import java.util.List;
  * Created by Pavel Asadchiy
  * on 12:46 24.03.18.
  */
+@CrossOrigin(origins = "http://localhost:63342")
 @RestController
 @RequestMapping(value = "/venue")
 public class VenueController {
@@ -26,7 +27,6 @@ public class VenueController {
         this.venueService = venueService;
     }
 
-    @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/api/call")
     public List<Venue> getVenuesThroughClient(@RequestParam @ApiParam(value = "Latitude coordinate of the search", required = true) double latitude,
                                               @RequestParam @ApiParam(value = "Longitude coordinate of the search", required = true) double longitude,

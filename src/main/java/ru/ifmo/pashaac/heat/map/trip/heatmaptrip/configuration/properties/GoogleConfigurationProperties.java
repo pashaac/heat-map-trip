@@ -25,4 +25,6 @@ public class GoogleConfigurationProperties {
     private Integer connectTimeout;
     private Integer requestsLimit;
 
+    private Integer venueLimit;
+    private Integer callFailDelay;
 }

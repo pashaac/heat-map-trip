@@ -38,13 +38,11 @@ public class GoogleClient {
         this.googleGeoApiContext = googleGeoApiContext;
     }
 
-    @SneakyThrows(value = {InterruptedException.class, ApiException.class, IOException.class})
-    public GeocodingResult[] reverseGeocode(LatLng location) {
+    public GeocodingResult[] reverseGeocode(LatLng location) throws InterruptedException, ApiException, IOException {
         return GeocodingApi.reverseGeocode(googleGeoApiContext, location).await();
     }
 
-    @SneakyThrows(value = {InterruptedException.class, ApiException.class, IOException.class})
-    public GeocodingResult[] geocode(String address) {
+    public GeocodingResult[] geocode(String address) throws InterruptedException, ApiException, IOException {
         return GeocodingApi.geocode(googleGeoApiContext, address).await();
     }
 
