@@ -5,9 +5,11 @@
 
 ## Technologies / Features ## 
 
-Markup: - [] Spring Framework
-            - [x] Spring Boot
-            - [x] Spring Boot Property Configuration <=> *.yml
+- [ ] Spring Framework
+- [x] Spring Boot
+- [x] Spring Boot Property Configuration <=> *.yml
+
+
             - [x] MVC Application structure best practices
             - [] HikariCP   
         - [x] Gradle
