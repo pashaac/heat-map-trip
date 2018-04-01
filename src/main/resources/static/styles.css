@@ -1,6 +1,7 @@
 #google-map {
     height: 100%;
 }
+
 html, body {
     height: 100%;
     margin: 0;
@@ -8,9 +9,34 @@ html, body {
     font-family: sans-serif;
 }
 
-paper-input-place {
+#google-search-box {
     position: absolute;
-    top: 35px;
-    left: 10px;
+    top: 0;
+    left: 125px;
+    min-width: 250px;
+    z-index: 1;
+}
+
+#data-source-dropdown {
+    position: absolute;
+    top: 0;
+    left: 400px;
+    max-width: 175px;
+    z-index: 1;
+}
+
+#category-source-dropdown {
+    position: absolute;
+    top: 0;
+    left: 600px;
+    max-width: 175px;
+    z-index: 1;
+}
+
+#animation-show {
+    position: absolute;
+    font-family: sans-serif;
+    top: 25px;
+    left: 800px;
     z-index: 1;
 }

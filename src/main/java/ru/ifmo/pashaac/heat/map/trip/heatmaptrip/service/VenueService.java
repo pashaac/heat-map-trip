@@ -2,12 +2,7 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
-
-import java.util.List;
 
 /**
  * Created by Pavel Asadchiy
@@ -23,13 +18,14 @@ public class VenueService {
         this.googleService = googleService;
     }
 
-    public List<Venue> apiCallThroughClient(Marker marker, int radius, Source source) {
+    public AbstractVenueMiner getSourceMiner(Source source) {
         switch (source) {
             case FOURSQUARE:
             case GOOGLE:
-                return googleService.apiCall(marker, radius, Category.sights());
+                return googleService;
             default:
                 throw new IllegalArgumentException("Incorrect data source type: " + source);
         }
     }
+
 }

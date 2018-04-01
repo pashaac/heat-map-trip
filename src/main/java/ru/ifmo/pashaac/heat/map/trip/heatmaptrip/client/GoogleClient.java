@@ -7,7 +7,6 @@ import com.google.maps.errors.ApiException;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.PlacesSearchResponse;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,7 +49,7 @@ public class GoogleClient {
         return PlacesApi.nearbySearchQuery(googleGeoApiContext, new LatLng(center.getLatitude(), center.getLongitude()))
                 .radius(radius)
                 .language("ru")
-                .custom("type", categories)
+                .custom("types", categories)
                 .await();
     }
 

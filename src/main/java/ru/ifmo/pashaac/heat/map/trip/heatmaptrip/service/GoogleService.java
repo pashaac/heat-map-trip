@@ -11,7 +11,6 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.Google
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
@@ -41,10 +40,13 @@ public class GoogleService extends AbstractVenueMiner {
         this.googleConfigurationProperties = googleConfigurationProperties;
     }
 
+    @Override
     public List<Venue> apiCall(Marker center, int radius, List<Category> categories) {
         try {
             String googleApiCategories = googleApiUnderstandableCategories(categories);
-            return googleClient.apiCall(center, radius, googleApiCategories);
+            List<Venue> venues = googleClient.apiCall(center, radius, googleApiCategories);
+            log.info("Google API call return {} venues according to categories: {}", venues.size(), googleApiCategories);
+            return venues;
         } catch (InterruptedException | ApiException | IOException e) {
             log.error("Google API service temporary unavailable or reject call, message {}", e.getMessage());
             throw new RuntimeException("Google API service temporary unavailable");
@@ -100,19 +102,18 @@ public class GoogleService extends AbstractVenueMiner {
     }
 
     @Override
-    public boolean isReachTheLimits(int venues) {
+    public boolean isReachTheLimit(int venues) {
         return venues >= googleConfigurationProperties.getVenueLimit();
     }
 
     @Override
-    public List<Venue> venueValidation(City city, BoundingBox venuesBoundingBox, List<Venue> venues) {
+    public List<Venue> venueValidation(BoundingBox venuesBoundingBox, List<Venue> venues) {
         double average = venues.stream().mapToDouble(Venue::getRating).average().orElse(0.0);
         return venues.stream()
                 .filter(venue -> Objects.nonNull(venue.getCategory()))
                 .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
                 .filter(venue -> venue.getRating() > average * 0.1)
                 .filter(venue -> GeoEarthMathUtils.contains(venuesBoundingBox, venue.getLocation()))
-//                .peek(venue -> venue.setCity(city))
                 .collect(Collectors.toList());
     }
 

@@ -2,25 +2,68 @@
     <!--JS -->
     <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+
+    <!-- custom .js files with business logic -->
+    <script type="text/javascript" src="google-map.js"></script>
+    <script type="text/javascript" src="google-map-component.js"></script>
+    <script type="text/javascript" src="animation.js"></script>
+    <script type="text/javascript" src="utils.js"></script>
+    <script type="text/javascript" src="google-geolocation.js"></script>
+    <script type="text/javascript" src="bower_components/web-animations-js/web-animations.min.js"></script>
+
     <!-- google-map import should be before heat-map -->
     <script type="text/javascript"
-            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAihcW7K9WRbC_XRQ-qxCJqgSHeeN_97Rw&libraries=places"></script>
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAihcW7K9WRbC_XRQ-qxCJqgSHeeN_97Rw&amp;libraries=places"></script>
     <script type="text/javascript" src="bower_components/heatmap.js-amd/build/heatmap.js"></script>
     <script type="text/javascript"
             src="bower_components/heatmap.js-amd/plugins/gmaps-heatmap/gmaps-heatmap.js"></script>
-    <!-- custom .js files with business logic -->
-    <script type="text/javascript" src="geolocation.js"></script>
-    <script type="text/javascript" src="google-map.js"></script>
-    <script type="text/javascript" src="utils.js"></script>
+
     <!--HTML-->
     <link rel="import" href="bower_components/google-map/google-map.html">
+    <link rel="import" href="bower_components/paper-input/paper-input.html">
+    <link rel="import" href="bower_components/neon-animation/web-animations.html">
+    <link rel="import" href="bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+
+    <link rel="import" href="bower_components/paper-item/paper-item.html">
+    <link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html">
+    <link rel="import" href="bower_components/paper-listbox/paper-listbox.html">
+    <link rel="import" href="bower_components/paper-button/paper-button.html">
+    <link rel="import" href="bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
+
     <!--CSS-->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="google-map"></div>
+<paper-input id="google-search-box" label="The city of interest" type="search" placeholder="Start typing a city name"
+             char-counter invalid error-message="Choose the city from dropdown!"></paper-input>
+<paper-dropdown-menu id="data-source-dropdown" label="The data source" vertical-offset="60">
+    <paper-listbox slot="dropdown-content">
+        <paper-item>Google</paper-item>
+        <paper-item>Foursquare</paper-item>
+    </paper-listbox>
+</paper-dropdown-menu>
+<paper-dropdown-menu id="category-source-dropdown" label="Available categories" required="true" vertical-offset="60">
+    <paper-listbox slot="dropdown-content" multi>
+        <paper-item role="menuitemcheckbox">
+            <paper-checkbox id="checkbox-art" noink>Art</paper-checkbox>
+        </paper-item>
+        <paper-item role="menuitemcheckbox">
+            <paper-checkbox id="checkbox-nature" noink>Nature</paper-checkbox>
+        </paper-item>
+        <paper-item role="menuitemcheckbox">
+            <paper-checkbox id="checkbox-shrine" noink>Shrine</paper-checkbox>
+        </paper-item>
+        <paper-item role="menuitemcheckbox">
+            <paper-checkbox id="checkbox-sights" noink>Sights</paper-checkbox>
+        </paper-item>
+    </paper-listbox>
+</paper-dropdown-menu>
+<paper-button id="animation-show">Animation show</paper-button>
 <script>
     mapInitialization();
+    mapContentInitialization();
+    geolocationReverseBrowser();
 </script>
 </body>
 

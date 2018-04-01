@@ -13,7 +13,10 @@ import java.util.Optional;
 @Getter
 public enum Category {
 
-    PARK("", "park");
+    PARK("", "park"),
+    MUSEUM("", "museum"),
+    ART_GALLERY("", "art_gallery"),
+    POINT_OF_INTEREST("", "point_of_interest");
 
     private String foursquareKey;
     private String googleKey;
@@ -31,6 +34,6 @@ public enum Category {
 
 
     public static List<Category> sights() {
-        return Arrays.asList(PARK);
+        return Arrays.asList(MUSEUM);
     }
 }

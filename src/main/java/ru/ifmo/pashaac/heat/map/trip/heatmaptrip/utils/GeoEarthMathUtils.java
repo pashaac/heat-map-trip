@@ -6,6 +6,9 @@ import com.grum.geocalc.Point;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Util class for geo calculations on the Earth with geocalc.jap library help
  *
@@ -58,6 +61,11 @@ public class GeoEarthMathUtils {
     public static BoundingBox rightDownBoundingBox(BoundingBox box) {
         return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)));
     }
+
+    public static List<BoundingBox> getQuarters(BoundingBox box) {
+        return Arrays.asList(leftUpBoundingBox(box), rightUpBoundingBox(box), rightDownBoundingBox(box), leftDownBoundingBox(box));
+    }
+
 
     private static Marker getNorthWest(BoundingBox boundingBox) {
         return new Marker(boundingBox.getNorthEast().getLatitude(), boundingBox.getSouthWest().getLongitude());

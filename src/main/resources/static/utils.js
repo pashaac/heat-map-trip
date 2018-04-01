@@ -1,24 +1,24 @@
-function clearBoundingBoxes() {
-    boundingBoxes.forEach(function (boundingBox) {
+function clearGoogleBoundingBoxes() {
+    googleBoundingBoxes.forEach(function (boundingBox) {
         boundingBox.setMap(null);
     });
-    boundingBoxes = [];
+    googleBoundingBoxes = [];
 }
 
-function clearMarkers() {
-    markers.forEach(function (marker) {
+function clearGoogleMarkers() {
+    googleMarkers.forEach(function (marker) {
         marker.setMap(null);
     });
-    markers = [];
+    googleMarkers = [];
 }
 
-var googleRectangle = function (boundingBox) {
+var googleRectangle = function (boundingBox, color) {
     return new google.maps.Rectangle({
-        strokeColor: '#000000',
-        strokeOpacity: 0.75,
-        strokeWeight: 1,
-        fillOpacity: 0.1,
-        map: map,
+        strokeColor: color,
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        fillOpacity: 0.05,
+        map: googleMap,
         bounds: {
             north: boundingBox.northEast.latitude,
             south: boundingBox.southWest.latitude,
@@ -26,4 +26,13 @@ var googleRectangle = function (boundingBox) {
             west: boundingBox.southWest.longitude
         }
     });
+};
+
+var googleMarker = function (venue) {
+    return new google.maps.Marker({
+        position: {lat: venue.location.latitude, lng: venue.location.longitude},
+        map: googleMap,
+        animation: google.maps.Animation.DROP,
+        title: venue.title
+    })
 };

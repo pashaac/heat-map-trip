@@ -1,7 +1,8 @@
-var map;
+var googleMap;
+var googleMapCity;
 
-var boundingBoxes = [];
-var markers = [];
+var googleBoundingBoxes = [];
+var googleMarkers = [];
 
 var server = 'http://localhost:8080/';
 
@@ -11,8 +12,7 @@ function mapInitialization() {
         zoom: 3,
         language: 'ru'
     };
-    map = new google.maps.Map(document.getElementById('google-map'), mapOptions);
-    geolocationReverseBrowser();
+    googleMap = new google.maps.Map(document.getElementById('google-map'), mapOptions);
 
     // heatmap = new HeatmapOverlay(map,
     //     {
