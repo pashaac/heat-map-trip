@@ -11,7 +11,7 @@ function animationCall(box) {
         type: "PUT",
         dataType: "json",
         contentType: 'application/json',
-        url: server + 'venue/api/call/details',
+        url: server + 'venue/api/call/details?source=GOOGLE',
         data: JSON.stringify(box),
         cache: false,
         success: function (apiBox) {

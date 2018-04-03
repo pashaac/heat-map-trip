@@ -11,12 +11,17 @@
 .springBeans
 .sts4-cache
 
+### Bower ###
+node_modules
+.tmp
+.sass-cache
+bower_components
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
 *.iml
 *.ipr
-bower_components
 notes.txt
 
 ### NetBeans ###

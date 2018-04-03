@@ -23,6 +23,7 @@
     <link rel="import" href="bower_components/paper-input/paper-input.html">
     <link rel="import" href="bower_components/neon-animation/web-animations.html">
     <link rel="import" href="bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+    <link rel="import" href="bower_components/paper-dropdown-menu-multi/paper-dropdown-menu-multi.html">
 
     <link rel="import" href="bower_components/paper-item/paper-item.html">
     <link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html">
@@ -43,22 +44,11 @@
         <paper-item>Foursquare</paper-item>
     </paper-listbox>
 </paper-dropdown-menu>
-<paper-dropdown-menu id="category-source-dropdown" label="Available categories" required="true" vertical-offset="60">
-    <paper-listbox slot="dropdown-content" multi>
-        <paper-item role="menuitemcheckbox">
-            <paper-checkbox id="checkbox-art" noink>Art</paper-checkbox>
-        </paper-item>
-        <paper-item role="menuitemcheckbox">
-            <paper-checkbox id="checkbox-nature" noink>Nature</paper-checkbox>
-        </paper-item>
-        <paper-item role="menuitemcheckbox">
-            <paper-checkbox id="checkbox-shrine" noink>Shrine</paper-checkbox>
-        </paper-item>
-        <paper-item role="menuitemcheckbox">
-            <paper-checkbox id="checkbox-sights" noink>Sights</paper-checkbox>
-        </paper-item>
-    </paper-listbox>
-</paper-dropdown-menu>
+
+<paper-dropdown-menu-multi id="category-source-dropdown" label="Available categories"
+                           selections='[&quot;Art&quot;,&quot;Nature&quot;,&quot;Shrine&quot;,&quot;Sights&quot;]'
+                           required = true></paper-dropdown-menu-multi>
+
 <paper-button id="animation-show">Animation show</paper-button>
 <script>
     mapInitialization();

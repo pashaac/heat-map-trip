@@ -42,9 +42,9 @@ public class VenueController {
 
 
     @RequestMapping(path = "/api/call/details", method = RequestMethod.PUT)
-    public ApiBoundingBox getFullVenuesThroughClient(@RequestBody @ApiParam(value = "BoundingBox of the search", required = true) BoundingBox boundingBox
-                                                     /*@RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source*/) {
-        AbstractVenueMiner venueMiner = venueService.getSourceMiner(Source.GOOGLE);
+    public ApiBoundingBox getVenuesDetailsThroughClient(@RequestBody @ApiParam(value = "BoundingBox of the search", required = true) BoundingBox boundingBox,
+                                                     @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source) {
+        AbstractVenueMiner venueMiner = venueService.getSourceMiner(source);
         List<Venue> dirtyVenues = venueMiner.mine(boundingBox, Category.sights());
         List<Venue> venues = venueMiner.venueValidation(boundingBox, dirtyVenues);
         return ApiBoundingBox.builder()
