@@ -32,4 +32,3 @@ dist/
 nbdist/
 .nb-gradle/
 out/
-src/main/resources/static/bower_components/
