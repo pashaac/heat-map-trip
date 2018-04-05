@@ -5,10 +5,10 @@
 
     <!-- custom .js files with business logic -->
     <script type="text/javascript" src="google-map.js"></script>
-    <script type="text/javascript" src="google-map-component.js"></script>
     <script type="text/javascript" src="animation.js"></script>
     <script type="text/javascript" src="utils.js"></script>
     <script type="text/javascript" src="google-geolocation.js"></script>
+    <script type="text/javascript" src="venue-controller.js"></script>
     <script type="text/javascript" src="bower_components/web-animations-js/web-animations.min.js"></script>
 
     <!-- google-map import should be before heat-map -->
@@ -38,7 +38,8 @@
 <div id="google-map"></div>
 <paper-input id="google-search-box" label="The city of interest" type="search" placeholder="Start typing a city name"
              char-counter invalid error-message="Choose the city from dropdown!"></paper-input>
-<paper-dropdown-menu id="data-source-dropdown" label="The data source" vertical-offset="60">
+<paper-dropdown-menu id="data-source-dropdown" label="The data source" vertical-offset="60" invalid
+                     error-message="Choose the data source from dropdown!">
     <paper-listbox slot="dropdown-content">
         <paper-item>Google</paper-item>
         <paper-item>Foursquare</paper-item>
@@ -46,13 +47,12 @@
 </paper-dropdown-menu>
 
 <paper-dropdown-menu-multi id="category-source-dropdown" label="Available categories"
-                           selections='[&quot;Art&quot;,&quot;Nature&quot;,&quot;Shrine&quot;,&quot;Sights&quot;]'
-                           required = true></paper-dropdown-menu-multi>
+                           selections='[&quot;Art&quot;,&quot;Nature&quot;]'></paper-dropdown-menu-multi>
 
 <paper-button id="animation-show">Animation show</paper-button>
+<paper-button id="venue-call">API Call</paper-button>
 <script>
     mapInitialization();
-    mapContentInitialization();
     geolocationReverseBrowser();
 </script>
 </body>

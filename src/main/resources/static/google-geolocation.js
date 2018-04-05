@@ -12,19 +12,19 @@ function geolocationReverseBrowser() {
 }
 
 function geolocationReverse(args) { // {lat: 0.0, lng: 0.0}
-    console.log(server + 'geolocation/reverse?' + $.param(args));
+    console.log(url('/geolocation/reverse?' + jQuery.param(args)));
     jQuery.ajax({
         type: "GET",
         dataType: "json",
-        url: server + 'geolocation/reverse' + '?' + jQuery.param(args),
+        url: url('/geolocation/reverse?' + jQuery.param(args)),
         success: function (city) {
             console.log('geolocation reverse city: ' + city.city + ' / ' + city.country);
             var southwest = {lat: city.boundingBox.southWest.latitude, lng: city.boundingBox.southWest.longitude};
             var northeast = {lat: city.boundingBox.northEast.latitude, lng: city.boundingBox.northEast.longitude};
             googleMap.fitBounds(new google.maps.LatLngBounds(southwest, northeast));
-            googleSearchBox.value = city.city + ', ' + city.country;
-            googleSearchBox.invalid = false;
-            googleMapCity = city;
+            getGoogleSearchBox().value = city.city + ', ' + city.country;
+            getGoogleSearchBox().invalid = false;
+            setGoogleMapCity(city);
         }
     });
 }

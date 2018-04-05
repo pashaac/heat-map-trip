@@ -16,12 +16,12 @@ import java.util.List;
  */
 public class GeoEarthMathUtils {
 
-    public static double distance(Marker point1, Marker point2) {
-        return EarthCalc.getVincentyDistance(convert(point1), convert(point2));
-    }
-
     private static Point convert(Marker marker) {
         return new Point(new DegreeCoordinate(marker.getLatitude()), new DegreeCoordinate(marker.getLongitude()));
+    }
+
+    public static double distance(Marker point1, Marker point2) {
+        return EarthCalc.getVincentyDistance(convert(point1), convert(point2));
     }
 
     private static Marker median(Marker point1, Marker point2) {
@@ -31,41 +31,15 @@ public class GeoEarthMathUtils {
         return new Marker(median.getLatitude(), median.getLongitude());
     }
 
-    public static double halfLength(Marker point1, Marker point2) {
-        Marker median = median(point1, point2);
-        return 0.5 * (distance(point1, median) + distance(point2, median));
+    public static boolean contains(BoundingBox boundingBox, Marker point) {
+        boolean latitudeIntersection = boundingBox.getSouthWest().getLatitude() < point.getLatitude() && point.getLatitude() < boundingBox.getNorthEast().getLatitude();
+        boolean longitudeIntersection = boundingBox.getSouthWest().getLongitude() < point.getLongitude() && point.getLongitude() < boundingBox.getNorthEast().getLongitude();
+        return latitudeIntersection && longitudeIntersection;
     }
 
-    public static Marker center(BoundingBox boundingBox) {
-        return median(boundingBox.getSouthWest(), boundingBox.getNorthEast());
+    public static Marker center(BoundingBox box) {
+        return GeoEarthMathUtils.median(box.getSouthWest(), box.getNorthEast());
     }
-
-    private static Marker boundingBoxCenter(BoundingBox box) {
-        return median(box.getSouthWest(), box.getNorthEast());
-    }
-
-    public static BoundingBox leftUpBoundingBox(BoundingBox box) {
-        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)));
-    }
-
-    public static BoundingBox leftDownBoundingBox(BoundingBox box) {
-        Marker center = boundingBoxCenter(box);
-        return new BoundingBox(box.getSouthWest(), center);
-    }
-
-    public static BoundingBox rightUpBoundingBox(BoundingBox box) {
-        Marker center = boundingBoxCenter(box);
-        return new BoundingBox(center, box.getNorthEast());
-    }
-
-    public static BoundingBox rightDownBoundingBox(BoundingBox box) {
-        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)));
-    }
-
-    public static List<BoundingBox> getQuarters(BoundingBox box) {
-        return Arrays.asList(leftUpBoundingBox(box), rightUpBoundingBox(box), rightDownBoundingBox(box), leftDownBoundingBox(box));
-    }
-
 
     private static Marker getNorthWest(BoundingBox boundingBox) {
         return new Marker(boundingBox.getNorthEast().getLatitude(), boundingBox.getSouthWest().getLongitude());
@@ -75,10 +49,31 @@ public class GeoEarthMathUtils {
         return new Marker(boundingBox.getSouthWest().getLatitude(), boundingBox.getNorthEast().getLongitude());
     }
 
-    public static boolean contains(BoundingBox boundingBox, Marker point) {
-        boolean latitudeIntersection = boundingBox.getSouthWest().getLatitude() < point.getLatitude() && point.getLatitude() < boundingBox.getNorthEast().getLatitude();
-        boolean longitudeIntersection = boundingBox.getSouthWest().getLongitude() < point.getLongitude() && point.getLongitude() < boundingBox.getNorthEast().getLongitude();
-        return latitudeIntersection && longitudeIntersection;
+    private static BoundingBox leftUpBoundingBox(BoundingBox box) {
+        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)));
+    }
+
+    private static BoundingBox leftDownBoundingBox(BoundingBox box) {
+        Marker center = center(box);
+        return new BoundingBox(box.getSouthWest(), center);
+    }
+
+    private static BoundingBox rightUpBoundingBox(BoundingBox box) {
+        Marker center = center(box);
+        return new BoundingBox(center, box.getNorthEast());
+    }
+
+    private static BoundingBox rightDownBoundingBox(BoundingBox box) {
+        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)));
+    }
+
+    public static List<BoundingBox> getQuarters(BoundingBox box) {
+        return Arrays.asList(leftUpBoundingBox(box), rightUpBoundingBox(box), rightDownBoundingBox(box), leftDownBoundingBox(box));
+    }
+
+    public static int outerRadius(BoundingBox box) {
+        Marker median = median(box.getSouthWest(), box.getNorthEast());
+        return (int) (0.5 * (distance(box.getSouthWest(), median) + distance(box.getNorthEast(), median)));
     }
 
 }

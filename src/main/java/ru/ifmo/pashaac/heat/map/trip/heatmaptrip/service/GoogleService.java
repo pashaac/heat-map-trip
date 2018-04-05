@@ -3,6 +3,7 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import com.google.maps.errors.ApiException;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
+import com.google.maps.model.PlacesSearchResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,13 +12,16 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.Google
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -27,36 +31,17 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class GoogleService extends AbstractVenueMiner {
-
-    private static final String CATEGORIES_SEPARATOR = "|";
+public class GoogleService implements VenueMiner {
 
     private final GoogleClient googleClient;
     private final GoogleConfigurationProperties googleConfigurationProperties;
+    private final CategoryService categoryService;
 
     @Autowired
-    public GoogleService(GoogleClient googleClient, GoogleConfigurationProperties googleConfigurationProperties) {
+    public GoogleService(GoogleClient googleClient, GoogleConfigurationProperties googleConfigurationProperties, CategoryService categoryService) {
         this.googleClient = googleClient;
         this.googleConfigurationProperties = googleConfigurationProperties;
-    }
-
-    @Override
-    public List<Venue> apiCall(Marker center, int radius, List<Category> categories) {
-        try {
-            String googleApiCategories = googleApiUnderstandableCategories(categories);
-            List<Venue> venues = googleClient.apiCall(center, radius, googleApiCategories);
-            log.info("Google API call return {} venues according to categories: {}", venues.size(), googleApiCategories);
-            return venues;
-        } catch (InterruptedException | ApiException | IOException e) {
-            log.error("Google API service temporary unavailable or reject call, message {}", e.getMessage());
-            throw new RuntimeException("Google API service temporary unavailable");
-        }
-    }
-
-    private String googleApiUnderstandableCategories(List<Category> categories) {
-        return categories.stream()
-                .map(Category::getGoogleKey)
-                .collect(Collectors.joining(CATEGORIES_SEPARATOR));
+        this.categoryService = categoryService;
     }
 
     public GeocodingResult[] reverseGeocode(Marker location) {
@@ -75,20 +60,67 @@ public class GoogleService extends AbstractVenueMiner {
         }
     }
 
-    private List<Venue> search(BoundingBox boundingBox, List<Category> categories) {
-        Marker center = GeoEarthMathUtils.center(boundingBox);
-        int radius = (int) GeoEarthMathUtils.halfLength(boundingBox.getSouthWest(), boundingBox.getNorthEast());
+    @Override
+    public List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories) {
         try {
-            return apiCall(center, radius, categories);
+            String googleApiCategories = categoryService.googleApiCategories(categories);
+            Marker center = GeoEarthMathUtils.center(boundingBox);
+            int radius = GeoEarthMathUtils.outerRadius(boundingBox);
+            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, googleApiCategories);
+            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), googleApiCategories);
+            return placesSearchResults.stream()
+                    .map(venue -> {
+
+                        Venue gVenue = new Venue();
+                        gVenue.setTitle(VenueUtils.quotation(venue.name));
+                        gVenue.setLocation(new Marker(venue.geometry.location.lat, venue.geometry.location.lng));
+                        gVenue.setSource(Source.GOOGLE);
+                        gVenue.setRating(venue.rating);
+                        gVenue.setAddress(venue.vicinity);
+                        gVenue.setDescription(String.format("Contact info:\n"
+                                        + "\t - Id: %s\n"
+                                        + "\t - Icon: %s\n"
+                                        + "\t - Types: %s\n"
+                                        + "Statistic info:\n"
+                                        + "\tRating: %s",
+                                venue.placeId, venue.icon, Arrays.toString(venue.types), venue.rating));
+
+                        for (String type : venue.types) {
+                            Optional<Category> venueCategory = categoryService.valueOfByGoogleKey(type);
+                            if (venueCategory.isPresent()) {
+                                gVenue.setCategory(venueCategory.get());
+                                break;
+                            }
+                        }
+
+                        if (log.isDebugEnabled()) {
+                            String debugCategoriesStr = Arrays.stream(venue.types)
+                                    .collect(Collectors.joining("|", "[", "]"));
+                            log.debug("Venue: {}, {}, rating {}, category: {}", gVenue.getTitle(), debugCategoriesStr, gVenue.getRating(), gVenue.getCategory());
+                        }
+                        return gVenue;
+                    })
+                    .collect(Collectors.toList());
+        } catch (InterruptedException | ApiException | IOException e) {
+            log.error("Google API service temporary unavailable or reject call, message {}", e.getMessage());
+            throw new RuntimeException("Google API service temporary unavailable");
+        }
+    }
+
+
+    @Override
+    public List<Venue> apiMine(BoundingBox boundingBox, List<Category> categories) {
+        try {
+            return apiCall(boundingBox, categories);
         } catch (RuntimeException ignored) {
             log.info("API call failed... Sleep for {} milliseconds before request retry...", googleConfigurationProperties.getCallFailDelay());
             try {
                 TimeUnit.MILLISECONDS.sleep(googleConfigurationProperties.getCallFailDelay());
             } catch (InterruptedException e) {
-                log.warn("Thread sleep between foursquare API calls was interrupted");
+                log.warn("Thread sleep between google API calls was interrupted");
             }
             try {
-                return apiCall(center, radius, categories);
+                return apiCall(boundingBox, categories);
             } catch (RuntimeException e) {
                 log.error("Error during google API call, message {}", e.getMessage());
                 return Collections.emptyList();
@@ -97,24 +129,8 @@ public class GoogleService extends AbstractVenueMiner {
     }
 
     @Override
-    public List<Venue> mine(BoundingBox boundingBox, List<Category> categories) {
-        return search(boundingBox, categories);
-    }
-
-    @Override
     public boolean isReachTheLimit(int venues) {
         return venues >= googleConfigurationProperties.getVenueLimit();
-    }
-
-    @Override
-    public List<Venue> venueValidation(BoundingBox venuesBoundingBox, List<Venue> venues) {
-        double average = venues.stream().mapToDouble(Venue::getRating).average().orElse(0.0);
-        return venues.stream()
-                .filter(venue -> Objects.nonNull(venue.getCategory()))
-                .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
-                .filter(venue -> venue.getRating() > average * 0.1)
-                .filter(venue -> GeoEarthMathUtils.contains(venuesBoundingBox, venue.getLocation()))
-                .collect(Collectors.toList());
     }
 
 }

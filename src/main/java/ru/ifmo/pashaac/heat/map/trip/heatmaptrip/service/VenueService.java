@@ -12,15 +12,18 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 public class VenueService {
 
     private final GoogleService googleService;
+    private final FoursquareService foursquareService;
 
     @Autowired
-    public VenueService(GoogleService googleService) {
+    public VenueService(GoogleService googleService, FoursquareService foursquareService) {
         this.googleService = googleService;
+        this.foursquareService = foursquareService;
     }
 
-    public AbstractVenueMiner getSourceMiner(Source source) {
+    public VenueMiner getMinerBySource(Source source) {
         switch (source) {
             case FOURSQUARE:
+                return foursquareService;
             case GOOGLE:
                 return googleService;
             default:

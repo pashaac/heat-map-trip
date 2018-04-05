@@ -1,10 +1,40 @@
 var googleMap;
 var googleMapCity;
 
-var googleBoundingBoxes = [];
-var googleMarkers = [];
+// var googleBoundingBoxes = [];
+// var googleMarkers = [];
 
-var server = 'http://localhost:8080/';
+function url(url) {
+    return 'http://localhost:8080' + url;
+}
+
+function getMapBoundingBox() {
+    return googleMapCity.boundingBox;
+}
+
+function getGoogleMap() {
+    return googleMap;
+}
+
+function getGoogleMapCity() {
+    return googleMapCity;
+}
+
+function setGoogleMapCity(city) {
+    googleMapCity = city;
+}
+
+function getGoogleSearchBox() {
+    return document.getElementById("google-search-box");
+}
+
+function getSource() {
+    return document.getElementById("data-source-dropdown").value;
+}
+
+function getCategories() {
+    return document.getElementById("category-source-dropdown").value;
+}
 
 function mapInitialization() {
     var mapOptions = {
@@ -13,6 +43,25 @@ function mapInitialization() {
         language: 'ru'
     };
     googleMap = new google.maps.Map(document.getElementById('google-map'), mapOptions);
+    googleSearchBoxInitialization();
+
+
+    // document.getElementById('animation-show').addEventListener('click', function (event) {
+    //     animationMining();
+    // });
+
+    document.getElementById('venue-call').addEventListener('click', function (event) {
+        dirty(getSource(), getCategories(), getMapBoundingBox(), function (venues) {
+            venues.forEach(function (venue) {
+                googleMarker(venue);
+            })
+        });
+    });
+
+    document.getElementById('data-source-dropdown').addEventListener('iron-select', function (event) {
+        this.invalid = false;
+    })
+
 
     // heatmap = new HeatmapOverlay(map,
     //     {
@@ -47,3 +96,19 @@ function mapInitialization() {
     //     }
     // })
 }
+
+function googleSearchBoxInitialization() {
+    var googleSearchBox = getGoogleSearchBox();
+    var autocomplete = new google.maps.places.Autocomplete(googleSearchBox, {types: ['(cities)']});
+    autocomplete.bindTo('bounds', googleMap);
+    autocomplete.addListener('place_changed', function () {
+        var place = autocomplete.getPlace();
+        if (place.geometry) {
+            var location = place.geometry.location;
+            geolocationReverse({lat: location.lat(), lng: location.lng()});
+        } else {
+            googleSearchBox.invalid = true;
+        }
+    });
+}
+

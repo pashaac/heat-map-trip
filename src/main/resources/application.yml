@@ -12,10 +12,88 @@ google:
     call-fail-delay: 1500
 
 # ===============================
+# = FOURSQUARE
+# ===============================
+foursquare:
+  api:
+    client-id: PQDUHRGQ3LRAIQBMC5VJZTR0ZENNBYO03Q1ERFXXG1HI0Y1S
+    client-secret: 2ARYMHXILVTZXYSLZL5THOPWK1OGGIQW03FFRWYG52OCBMRK
+    redirect-url:
+    venue-limit: 30
+    call-fail-delay: 1500
+
+# ===============================
 # = Venue Source Categories
+# = Foursquare: https://developer.foursquare.com/docs/resources/categories
+# = Google: https://developers.google.com/places/supported_types
 # ===============================
 venue:
-  category:
-    google:
-      park: park
+  categories:
+    -
+      title: Art
+      google-keys:
+        - museum
+        - art_gallery
+      foursquare-keys:
+        - 4bf58dd8d48988d181941735 # museum
+        - 4bf58dd8d48988d18f941735 # art museum
+        - 4bf58dd8d48988d190941735 # history museum
+        - 4bf58dd8d48988d137941735 # theater
+        - 4bf58dd8d48988d136941735 # opera house
+    -
+      title: Nature
+      google-keys:
+        - park
+      foursquare-keys:
+        - 4bf58dd8d48988d163941735 # park
+        - 4bf58dd8d48988d15a941735 # garden
+        - 52e81612bcbc57f1066b7a23 # forest
+        - 52e81612bcbc57f1066b7a21 # national park
 
+
+
+#    art:
+#      google:
+#        - museum
+#        - art_gallery
+#      foursquare:
+#        -
+#    nature:
+#      google:
+#        - park
+#      foursquare:
+#        -
+#    entertainment:
+#      google:
+#        - amusement_park
+#        - aquarium
+#        - casino
+#        - department_store
+#        - night_club
+#      foursquare:
+#        -
+#    catering:
+#      google:
+#        - bakery
+#        - bar # ?
+#        - cafe
+#        - meal_takeaway # ?
+#        - restaurant
+#      foursquare:
+#        -
+#    shrine:
+#      google:
+#        - church
+#        - hindu_temple
+#        - synagogue
+#        - mosque
+#      foursquare:
+#        -
+#    municipality:
+#      google:
+#        - city_hall
+#        - library
+#        - local_government_office
+#        - train_station
+#      foursquare:
+#        -

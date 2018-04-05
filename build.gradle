@@ -34,7 +34,6 @@ ext {
 
 dependencies {
 
-
 	// Spring boot
 	compile('org.springframework.boot:spring-boot-starter-actuator')
 	compile('org.springframework.boot:spring-boot-starter-cache')
@@ -47,9 +46,15 @@ dependencies {
 	// Google
 	compile "com.google.maps:google-maps-services:${googleLibVersion}"
 
+	// Foursquare
+	compile files('src/main/resources/libs/foursquare/foursquare-api-1.0.7.jar')
+
 	// Swagger
 	compile "io.springfox:springfox-swagger2:${swaggerVersion}"
 	compile "io.springfox:springfox-swagger-ui:${swaggerVersion}"
+
+	// Stupid dependency on JSON
+	compile "org.json:json:20180130"
 
 	// Geo Earth calculator
 	compile files('src/main/resources/libs/geocalc/geocalc-0.5.1.jar')

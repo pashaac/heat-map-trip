@@ -1,20 +1,27 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * Created by Pavel Asadchiy
- * on 13:29 24.03.18.
+ * on 10:31 05.04.18.
  */
 @Getter
+@Setter
 @Configuration
-@ConfigurationProperties(prefix = "venue.category")
+@ConfigurationProperties(prefix = "foursquare.api")
 @EnableConfigurationProperties
-public class VenueSourceCategoryIdentifierConfigurationProperties {
+public class FoursquareConfigurationProperties {
 
-    private String googlePark;
+    private String clientId;
+    private String clientSecret;
+    private String redirectUrl;
+
+    private Integer venueLimit;
+    private Integer callFailDelay;
 
 }
