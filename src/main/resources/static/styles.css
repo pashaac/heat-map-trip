@@ -9,7 +9,7 @@ html, body {
     font-family: sans-serif;
 }
 
-#google-search-box {
+#google-city-search-box {
     position: absolute;
     top: 0;
     left: 125px;
@@ -25,26 +25,25 @@ html, body {
     z-index: 1;
 }
 
-#category-source-dropdown {
+#categories-dropdown {
     position: absolute;
     top: 0;
     left: 600px;
-    max-width: 175px;
+    max-width: 250px;
     z-index: 1;
 }
 
-#animation-show {
+#grid-slider {
     position: absolute;
-    font-family: sans-serif;
-    top: 25px;
-    left: 800px;
+    top: 14px;
+    left: 875px;
     z-index: 1;
 }
 
-#venue-call {
+#test-button {
     position: absolute;
     font-family: sans-serif;
-    top: 25px;
-    left: 1000px;
+    top: 15px;
+    left: 1100px;
     z-index: 1;
 }

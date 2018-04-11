@@ -4,11 +4,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.GeolocationService;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Pavel Asadchiy
@@ -37,5 +38,13 @@ public class GeolocationController {
     public City reverseGeolocation(@RequestParam @ApiParam(value = "latitude", required = true) double lat,
                                    @RequestParam @ApiParam(value = "longitude", required = true) double lng) {
         return geolocationService.reverseGeolocation(new Marker(lat, lng));
+    }
+
+
+    @RequestMapping(value = "/grid", method = RequestMethod.PUT)
+    @ApiOperation(value = "Create boundingBox grid for area")
+    public List<BoundingBox> boundingBoxGrid(@RequestParam @ApiParam(value = "Grid step", required = true) int grid,
+                                        @RequestBody @ApiParam(value = "BoundingBox area to create grid", required = true) BoundingBox boundingBox) {
+        return geolocationService.grid(boundingBox, grid);
     }
 }

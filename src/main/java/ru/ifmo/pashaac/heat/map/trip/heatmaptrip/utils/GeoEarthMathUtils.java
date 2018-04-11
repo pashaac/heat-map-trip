@@ -25,10 +25,18 @@ public class GeoEarthMathUtils {
     }
 
     private static Marker median(Marker point1, Marker point2) {
+        return measureOut(point1, point2, 0.5);
+//        double bearing = EarthCalc.getBearing(convert(point1), convert(point2));
+//        double distance = distance(point1, point2);
+//        Point median = EarthCalc.pointRadialDistance(convert(point1), bearing, 0.5 * distance);
+//        return new Marker(median.getLatitude(), median.getLongitude());
+    }
+
+    public static Marker measureOut(Marker point1, Marker point2, double ratio) {
         double bearing = EarthCalc.getBearing(convert(point1), convert(point2));
         double distance = distance(point1, point2);
-        Point median = EarthCalc.pointRadialDistance(convert(point1), bearing, 0.5 * distance);
-        return new Marker(median.getLatitude(), median.getLongitude());
+        Point point = EarthCalc.pointRadialDistance(convert(point1), bearing, ratio * distance);
+        return new Marker(point.getLatitude(), point.getLongitude());
     }
 
     public static boolean contains(BoundingBox boundingBox, Marker point) {
@@ -41,11 +49,11 @@ public class GeoEarthMathUtils {
         return GeoEarthMathUtils.median(box.getSouthWest(), box.getNorthEast());
     }
 
-    private static Marker getNorthWest(BoundingBox boundingBox) {
+    public static Marker getNorthWest(BoundingBox boundingBox) {
         return new Marker(boundingBox.getNorthEast().getLatitude(), boundingBox.getSouthWest().getLongitude());
     }
 
-    private static Marker getSouthEast(BoundingBox boundingBox) {
+    public static Marker getSouthEast(BoundingBox boundingBox) {
         return new Marker(boundingBox.getSouthWest().getLatitude(), boundingBox.getNorthEast().getLongitude());
     }
 

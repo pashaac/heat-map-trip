@@ -1,8 +1,8 @@
-function clearGoogleBoundingBoxes() {
-    googleBoundingBoxes.forEach(function (boundingBox) {
+function clearGridGoogleBoundingBoxes() {
+    griGoogleBoundingBoxes.forEach(function (boundingBox) {
         boundingBox.setMap(null);
     });
-    googleBoundingBoxes = [];
+    griGoogleBoundingBoxes = [];
 }
 
 function clearGoogleMarkers() {
@@ -16,7 +16,7 @@ var googleRectangle = function (boundingBox, color) {
     return new google.maps.Rectangle({
         strokeColor: color,
         strokeOpacity: 1,
-        strokeWeight: 3,
+        strokeWeight: 2,
         fillOpacity: 0.05,
         map: googleMap,
         bounds: {
@@ -36,3 +36,4 @@ var googleMarker = function (venue) {
         title: venue.title
     })
 };
+

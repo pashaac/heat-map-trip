@@ -54,4 +54,10 @@ public class CategoryService {
                 .collect(Collectors.joining(",")); // Foursquare separator
     }
 
+    public List<String> getVenueCategories() {
+        return venueCategoryConfigurationProperties.getCategories().stream()
+                .map(Category::getTitle)
+                .collect(Collectors.toList());
+    }
+
 }

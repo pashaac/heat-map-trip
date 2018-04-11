@@ -11,6 +11,8 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by Pavel Asadchiy
@@ -79,4 +81,29 @@ public class GeolocationService {
         return GeoEarthMathUtils.center(reverseGeolocation(googleService.geocode(address)).getBoundingBox());
     }
 
+    public List<BoundingBox> grid(BoundingBox boundingBox, int grid) {
+        return IntStream.range(0, grid * grid)
+                .mapToObj(i -> gridBoundingBox(boundingBox, i, grid))
+                .collect(Collectors.toList());
+    }
+
+    private BoundingBox gridBoundingBox(BoundingBox boundingBox, int ind, int grid) {
+        int xWest = ind % grid;
+        int ySouth = ind / grid;
+
+        int xEast = xWest + 1;
+        int yNorth = ySouth + 1;
+
+        Marker southWest = boundingBox.getSouthWest();
+
+        Marker southEast = GeoEarthMathUtils.getSouthEast(boundingBox);
+        double xWestLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) xWest / grid).getLongitude();
+        double xEastLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) xEast / grid).getLongitude();
+
+        Marker northWest = GeoEarthMathUtils.getNorthWest(boundingBox);
+        double ySouthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) ySouth / grid).getLatitude();
+        double yNorthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) yNorth / grid).getLatitude();
+
+        return new BoundingBox(new Marker(ySouthLatitude, xWestLongitude), new Marker(yNorthLatitude, xEastLongitude));
+    }
 }
