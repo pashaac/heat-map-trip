@@ -13,8 +13,8 @@
 - [x] Gradle build tool
 - [x] API visualization based on Swagger framework
 - [x] Lombok plugin (@Get / @Set / @Builder / @SneakyThrows / @Slf4j)
-- [ ] PostgreSQL
-    - [ ] HikariCP   
+- [x] PostgreSQL
+    - [x] HikariCP   
 - [x] Bower WEB build tool
 - [x] WebComponents
 - [x] Material design
@@ -25,30 +25,19 @@
     - [ ] Heap
     - [ ] CPU
     - [ ] DB 
-    
-            
-## Features ##
-- Smart rest calls
-    - Service does small pauses after unsuccessfully calls and try repeat call 
-- 2 data source supporting
-    - Introduce several abstraction layers (OOP)
--    
+   
         
 ## Notes ##
 Строим полный граф на всех объектах, суммируем расстояния, суммируем все рейтинги, берем среднее расстояние и делим. 
 
 ## Technical usage ## 
 1. Description about installation and bla-bla-bla         
-         
-1. Need update _updateValue(e) function in paper-dropdown-menu-multi.html, at the end of function add next lines:   
-```
-if (this._value.length === 0) {
-    this._value = undefined;
-}
-```
 
 ## TODO ## 
-- [ ] Create categories based on Google / Foursquare API
-    - [ ] Migrate categories to properties (application.yml)
-    - [ ] Remove hardcoded categories on UI side   
-    
+- [x] Create categories based on Google / Foursquare API
+    - [x] Migrate categories to properties (application.yml)
+    - [x] Remove hardcoded categories on UI side   
+- [x] Smart rest calls
+    - [x] Service does small pauses after unsuccessfully calls and try repeat call 
+- [x] 2 data source supporting
+    - [x] Introduce several abstraction layers (OOP)    

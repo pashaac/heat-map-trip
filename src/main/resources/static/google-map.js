@@ -12,6 +12,7 @@ function googleMapInitialization() {
     var mapOptions = {
         center: {lat: 59.957570, lng: 30.307946}, // ITMO University
         zoom: 3,
+        scaleControl: true,
         language: 'ru'
     };
     googleMap = new google.maps.Map(document.getElementById('google-map'), mapOptions);
@@ -75,11 +76,11 @@ function googleCategoriesInitialization() {
         domBindCategories.items = items;
     });
     document.getElementById('categories-dropdown').addEventListener('close', function (event) {
-        var dropdownValue = this.$.dropdownMenu.value;
-        dropdownValue = this.value.join(', ');
+        var dropdownValue = this.value.join(', ');
         if (this.invalid && dropdownValue != null && dropdownValue.length !== 0) {
             this.invalid = false;
         }
+        this.$.dropdownMenu.value = dropdownValue;
     });
 }
 

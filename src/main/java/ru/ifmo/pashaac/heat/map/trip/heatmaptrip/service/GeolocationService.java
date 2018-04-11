@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.Arrays;
@@ -33,15 +34,20 @@ public class GeolocationService {
     private static final List<AddressType> COUNTRY_TYPES = Arrays.asList(AddressType.COUNTRY, AddressType.POLITICAL);
 
     private final GoogleService googleService;
+    private final CityRepository cityRepository;
 
     @Autowired
-    public GeolocationService(GoogleService googleService) {
+    public GeolocationService(GoogleService googleService, CityRepository cityRepository) {
         this.googleService = googleService;
+        this.cityRepository = cityRepository;
     }
 
     public City reverseGeolocation(Marker location) {
         log.info("Try determine city by coordinates ({}, {}) ...", location.getLatitude(), location.getLongitude());
-        return reverseGeolocation(googleService.reverseGeocode(location));
+        return cityRepository.findAll().stream()
+                .filter(city -> GeoEarthMathUtils.contains(city.getBoundingBox(), location))
+                .peek(city -> log.info("City {}, {} was found in database", city.getCity(), city.getCountry()))
+                .findFirst().orElseGet(() -> reverseGeolocation(googleService.reverseGeocode(location)));
     }
 
     private City reverseGeolocation(GeocodingResult[] geocodingResults) {
@@ -71,9 +77,9 @@ public class GeolocationService {
 
 
         BoundingBox boundingBox = new BoundingBox(new Marker(box.southwest.lat, box.southwest.lng), new Marker(box.northeast.lat, box.northeast.lng));
-        City city = new City(cityComponent.longName, countryComponent.longName, boundingBox);
-        log.info("Google geolocation method determined city {}, {} and saved it into database", city.getCity(), city.getCountry());
-        return city;
+        City savedCity = cityRepository.saveAndFlush(new City(cityComponent.longName, countryComponent.longName, boundingBox));
+        log.info("Google geolocation method determined city {}, {} and saved it into database", savedCity.getCity(), savedCity.getCountry());
+        return savedCity;
     }
 
     public Marker geolocation(String address) {

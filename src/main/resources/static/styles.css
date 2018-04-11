@@ -36,14 +36,15 @@ html, body {
 #grid-slider {
     position: absolute;
     top: 14px;
-    left: 875px;
+    min-width: 275px;
+    left: 850px;
     z-index: 1;
 }
 
 #test-button {
     position: absolute;
     font-family: sans-serif;
-    top: 15px;
-    left: 1100px;
+    top: 55px;
+    left: 5px;
     z-index: 1;
 }

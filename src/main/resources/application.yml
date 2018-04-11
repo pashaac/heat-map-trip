@@ -115,3 +115,28 @@ venue:
         - 4bf58dd8d48988d1df941735 # Bridge
 
 
+# ===============================
+# = POSTGRESQL
+# ===============================
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://localhost:5432/heat-map-trip
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 10000
+      idle-timeout: 10000
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# ===============================
+# = JPA / HIBERNATE
+# ===============================

@@ -27,6 +27,7 @@
     <link rel="import" href="bower_components/paper-button/paper-button.html">
     <link rel="import" href="bower_components/paper-dropdown/paper-dropdown.html">
     <link rel="import" href="bower_components/paper-slider/paper-slider.html">
+    <link rel="import" href="bower_components/iron-icon/iron-icon.html">
 
     <link rel="import" href="bower_components/neon-animation/web-animations.html">
 
@@ -57,9 +58,10 @@
     </template>
 </dom-bind>
 
-<paper-slider id="grid-slider" pin snaps min="0" dir="ltr" editable max="20" max-markers="20" step="1" value="0"></paper-slider>
+<paper-slider id="grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="32" max-markers="32"
+              step="1" value="0"></paper-slider>
 
-<paper-button id="test-button" raised>Test button</paper-button>
+<paper-button id="test-button" toggles raised>button</paper-button>
 <script>
     mapComponentsInitialization();
     geolocationReverseBrowser();
