@@ -60,4 +60,12 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    public List<String> convertCategories(List<Category> categories) {
+        return categories.stream()
+                .map(Category::getTitle)
+                .collect(Collectors.toList());
+    }
+
+
+
 }

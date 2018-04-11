@@ -120,18 +120,29 @@ function mapComponentsInitialization() {
 
 
     document.getElementById('test-button').addEventListener('click', function (event) {
-        console.log('Click test button');
+        var invalid = false;
         if (googleMapCity == null) {
             var googleSearchBox = document.getElementById("google-city-search-box");
             googleSearchBox.invalid = true;
+            invalid = true;
         }
         var dataSource = document.getElementById("data-source-dropdown");
         if (dataSource.value == null) {
             dataSource.invalid = true;
+            invalid  = true;
         }
         var categories = document.getElementById('categories-dropdown');
         if (categories.value == null || categories.value.length === 0) {
             categories.invalid = true;
+            invalid = true;
+        }
+
+        if (invalid  === false) {
+            venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
+                venues.forEach(function (venue) {
+                    googleMarker(venue);
+                })
+            })
         }
     });
 
@@ -188,5 +199,5 @@ function getDataSourceValue() {
 }
 
 function getSelectedCategoriesArray() {
-    return document.getElementById("category-source-dropdown").value;
+    return document.getElementById("categories-dropdown").value;
 }

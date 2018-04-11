@@ -1,13 +1,14 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Pavel Asadchiy
@@ -35,9 +36,9 @@ public class City {
     })
     private BoundingBox boundingBox;
 
-    private String status;
-    @ElementCollection
-    private Set<String> categories = new HashSet<>();
+    @JsonManagedReference("city-venue")
+    @OneToMany(targetEntity = Venue.class, cascade = CascadeType.REMOVE, mappedBy = "city")
+    private List<Venue> venues = new ArrayList<>();
 
     public City(String city, String country, BoundingBox boundingBox) {
         this.city = city;

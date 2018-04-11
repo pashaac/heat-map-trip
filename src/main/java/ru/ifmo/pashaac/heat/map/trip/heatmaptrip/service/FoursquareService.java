@@ -14,7 +14,6 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -42,8 +41,9 @@ public class FoursquareService implements VenueMiner {
     public List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories) {
         try {
             String foursquareApiCategories = categoryService.foursquareApiCategories(categories);
+            List<String> strCategories = categoryService.convertCategories(categories);
             List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, foursquareApiCategories);
-            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), categories);
+            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), strCategories);
             return compactVenues.stream()
                     .map(venue -> {
                         Venue fVenue = new Venue();
@@ -73,7 +73,7 @@ public class FoursquareService implements VenueMiner {
                             if (category != null) {
                                 Optional<Category> venueCategory = categoryService.valueOfByFoursquareKey(category.getId());
                                 if (venueCategory.isPresent()) {
-                                    fVenue.setCategory(venueCategory.get());
+                                    fVenue.setCategory(venueCategory.get().getTitle());
                                     break;
                                 }
                             }
@@ -96,9 +96,9 @@ public class FoursquareService implements VenueMiner {
     }
 
     @Override
-    public List<Venue> apiMine(BoundingBox boundingBox, List<Category> categories) {
+    public Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories) {
         try {
-            return apiCall(boundingBox, categories);
+            return Optional.of(apiCall(boundingBox, categories));
         } catch (RuntimeException ignored) {
             log.warn("API call failed... Sleep for {} milliseconds before request retry...", foursquareConfigurationProperties.getCallFailDelay());
             try {
@@ -107,10 +107,10 @@ public class FoursquareService implements VenueMiner {
                 log.warn("Thread sleep between foursquare API calls was interrupted");
             }
             try {
-                return apiCall(boundingBox, categories);
+                return Optional.of(apiCall(boundingBox, categories));
             } catch (RuntimeException e) {
                 log.error("Error during foursquare API call, message {}", e.getMessage());
-                return Collections.emptyList();
+                return Optional.empty();
             }
         }
     }

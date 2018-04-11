@@ -19,7 +19,6 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +59,11 @@ public class GoogleService implements VenueMiner {
         }
     }
 
+    /**
+     * @param boundingBox - area search
+     * @param categories - categories to search
+     * @return venues in boundingbox (could return and outside venues)
+     */
     @Override
     public List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories) {
         try {
@@ -88,7 +92,7 @@ public class GoogleService implements VenueMiner {
                         for (String type : venue.types) {
                             Optional<Category> venueCategory = categoryService.valueOfByGoogleKey(type);
                             if (venueCategory.isPresent()) {
-                                gVenue.setCategory(venueCategory.get());
+                                gVenue.setCategory(venueCategory.get().getTitle());
                                 break;
                             }
                         }
@@ -109,9 +113,9 @@ public class GoogleService implements VenueMiner {
 
 
     @Override
-    public List<Venue> apiMine(BoundingBox boundingBox, List<Category> categories) {
+    public Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories) {
         try {
-            return apiCall(boundingBox, categories);
+            return Optional.of(apiCall(boundingBox, categories));
         } catch (RuntimeException ignored) {
             log.info("API call failed... Sleep for {} milliseconds before request retry...", googleConfigurationProperties.getCallFailDelay());
             try {
@@ -120,10 +124,10 @@ public class GoogleService implements VenueMiner {
                 log.warn("Thread sleep between google API calls was interrupted");
             }
             try {
-                return apiCall(boundingBox, categories);
+                return Optional.of(apiCall(boundingBox, categories));
             } catch (RuntimeException e) {
                 log.error("Error during google API call, message {}", e.getMessage());
-                return Collections.emptyList();
+                return Optional.empty();
             }
         }
     }

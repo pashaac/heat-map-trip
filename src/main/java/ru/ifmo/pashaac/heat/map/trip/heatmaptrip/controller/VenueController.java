@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.*;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.CategoryService;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueProxyService;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,21 +26,29 @@ import java.util.List;
 @RequestMapping(value = "/venue")
 public class VenueController {
 
-    private final VenueProxyService venueService;
+    private final VenueService venueService;
     private final CategoryService categoryService;
 
     @Autowired
-    public VenueController(VenueProxyService venueService, CategoryService categoryService) {
+    public VenueController(VenueService venueService, CategoryService categoryService) {
         this.venueService = venueService;
         this.categoryService = categoryService;
     }
 
-    @RequestMapping(path = "/api/mine", method = RequestMethod.PUT)
+    @RequestMapping(path = "/api/call", method = RequestMethod.PUT)
     public VenuesBox getValidVenuesThroughClient(@RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                  @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature") List<String> categories,
                                                  @RequestBody @ApiParam(value = "BoundingBox area of the search", required = true) BoundingBox boundingBox) {
-        List<Venue> dirtyVenues = venueService.apiMine(boundingBox, categoryService.valueOf(categories), source);
-        return venueService.validate(boundingBox, dirtyVenues, source);
+        List<Venue> dirtyVenues = venueService.sourceMiner(source).apiMine(boundingBox, categoryService.valueOf(categories))
+                .orElse(Collections.emptyList());
+        return venueService.sourceMiner(source).validate(boundingBox, dirtyVenues);
+    }
+
+    @RequestMapping(path = "/city/mine", method = RequestMethod.PUT)
+    public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                      @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") List<String> categories,
+                                      @RequestBody @ApiParam(value = "City of the search", required = true) City city) {
+        return venueService.quadTreeMineIfNeeded(city, source, categoryService.valueOf(categories));
     }
 
     @RequestMapping(value = "/categories", method = RequestMethod.GET)

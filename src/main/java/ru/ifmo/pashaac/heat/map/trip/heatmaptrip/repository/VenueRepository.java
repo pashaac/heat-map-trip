@@ -3,12 +3,15 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
+
+import java.util.List;
 
 /**
  * Created by Pavel Asadchiy
- * on 14:48 11.04.18.
+ * on 22:34 11.04.18.
  */
 @Repository
-public interface CityRepository extends JpaRepository<City, Long>  {
-    City findCityByCityAndCountry(String city, String country);
+public interface VenueRepository extends JpaRepository<Venue, Long> {
+    List<Venue> findVenuesByCityAndCategory(City city, String category);
 }

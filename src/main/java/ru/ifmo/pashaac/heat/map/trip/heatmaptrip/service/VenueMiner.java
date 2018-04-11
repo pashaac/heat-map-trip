@@ -9,6 +9,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +20,7 @@ public interface VenueMiner {
 
     List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories);
 
-    List<Venue> apiMine(BoundingBox boundingBox, List<Category> categories);
+    Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories);
 
     boolean isReachTheLimit(int venues);
 

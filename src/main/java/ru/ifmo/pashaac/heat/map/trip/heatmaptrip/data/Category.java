@@ -19,6 +19,4 @@ public class Category {
     private List<String> googleKeys;
     private List<String> foursquareKeys;
 
-
-
 }
