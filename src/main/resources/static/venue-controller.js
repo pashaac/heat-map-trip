@@ -23,13 +23,13 @@ function venueCategories(callback) {
     });
 }
 
-function geolocationCityGrid(grid, box, callback) {
-    console.log(url('/geolocation/grid'));
+function gridBoundingBoxController(box, grid, callback) {
+    console.log(url('/geolocation/grid/boundingbox'));
     jQuery.ajax({
         type: "PUT",
         dataType: "json",
         contentType: 'application/json',
-        url: url('/geolocation/grid?') + jQuery.param({grid: grid}),
+        url: url('/geolocation/grid/boundingbox?') + jQuery.param({grid: grid}),
         data: JSON.stringify(box),
         cache: false,
         success: callback

@@ -35,10 +35,10 @@
 </head>
 <body>
 <div id="google-map"></div>
-<paper-input id="google-city-search-box" type="search" label="The city of interest" always-float-label char-counter
+<paper-input id="google-map-city-search-box" type="search" label="The city of interest" always-float-label char-counter
              error-message="Select the city from dropdown!"></paper-input>
 
-<paper-dropdown id="data-source-dropdown" label="The data source" value="{{value}}" searchable
+<paper-dropdown id="google-map-venue-source" label="The data source" value="{{value}}" searchable
                 error-message="Select the data source from dropdown!">
     <paper-item value="google">Google</paper-item>
     <paper-item value="foursquare">Foursquare</paper-item>
@@ -58,7 +58,9 @@
 <paper-slider id="grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="32" max-markers="32"
               step="1" value="0"></paper-slider>
 
-<paper-button id="test-button" toggles raised>button</paper-button>
+<paper-button id="map-clear-button" toggles raised>clear</paper-button>
+<paper-button id="map-validate-button" toggles raised>validate</paper-button>
+
 <script>
     mapComponentsInitialization();
     geolocationReverseBrowser();

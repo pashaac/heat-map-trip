@@ -14,4 +14,5 @@ import java.util.List;
 @Repository
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     List<Venue> findVenuesByCityAndCategory(City city, String category);
+    List<Venue> findVenuesByCity_IdAndCategory(Long cityId, String category);
 }

@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.CategoryService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
@@ -45,10 +44,10 @@ public class VenueController {
     }
 
     @RequestMapping(path = "/city/mine", method = RequestMethod.PUT)
-    public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
-                                      @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") List<String> categories,
-                                      @RequestBody @ApiParam(value = "City of the search", required = true) City city) {
-        return venueService.quadTreeMineIfNeeded(city, source, categoryService.valueOf(categories));
+    public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "City of the search", required = true) Long cityId,
+                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                      @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") List<String> categories) {
+        return venueService.quadTreeMineIfNeeded(cityId, source, categoryService.valueOf(categories));
     }
 
     @RequestMapping(value = "/categories", method = RequestMethod.GET)

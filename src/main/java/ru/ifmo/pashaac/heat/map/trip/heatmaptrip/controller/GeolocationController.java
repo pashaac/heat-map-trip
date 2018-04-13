@@ -27,24 +27,26 @@ public class GeolocationController {
         this.geolocationService = geolocationService;
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    @ApiOperation(value = "Determine the Earth coordinates by human-readable address")
-    public Marker geolocation(@RequestParam @ApiParam(value = "human-readable address", required = true) String address) {
+    @RequestMapping(method = RequestMethod.PUT)
+    @ApiOperation(value = "Determine the Earth coordinates by location address")
+    public Marker geolocation(@RequestParam @ApiParam(value = "Location address", required = true) String address) {
         return geolocationService.geolocation(address);
     }
 
-    @RequestMapping(path = "/reverse", method = RequestMethod.GET)
-    @ApiOperation(value = "Determine the city to which the coordinates belong")
-    public City reverseGeolocation(@RequestParam @ApiParam(value = "latitude", required = true) double lat,
-                                   @RequestParam @ApiParam(value = "longitude", required = true) double lng) {
+    @RequestMapping(path = "/reverse", method = RequestMethod.PUT)
+    @ApiOperation(value = "Determine the city according to coordinates")
+    public City reverseGeolocation(@RequestParam @ApiParam(value = "Reverse geolocation latitude", required = true) double lat,
+                                   @RequestParam @ApiParam(value = "Reverse geolocation longitude", required = true) double lng) {
         return geolocationService.reverseGeolocation(new Marker(lat, lng));
     }
 
-
-    @RequestMapping(value = "/grid", method = RequestMethod.PUT)
-    @ApiOperation(value = "Create boundingBox grid for area")
-    public List<BoundingBox> boundingBoxGrid(@RequestParam @ApiParam(value = "Grid step", required = true) int grid,
-                                        @RequestBody @ApiParam(value = "BoundingBox area to create grid", required = true) BoundingBox boundingBox) {
-        return geolocationService.grid(boundingBox, grid);
+    @RequestMapping(value = "/grid/boundingbox", method = RequestMethod.PUT)
+    @ApiOperation(value = "Create grid for boundingBox  area")
+    public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid,
+                                             @RequestBody @ApiParam(value = "Covered boundingBox area", required = true) BoundingBox boundingBox) {
+        if (grid < 1) {
+            throw new IllegalArgumentException("Grid cells count in row or column should be more then zero");
+        }
+        return geolocationService.gridBoundingBox(boundingBox, grid);
     }
 }

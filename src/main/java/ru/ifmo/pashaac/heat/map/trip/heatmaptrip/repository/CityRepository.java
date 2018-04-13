@@ -11,4 +11,5 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 @Repository
 public interface CityRepository extends JpaRepository<City, Long>  {
     City findCityByCityAndCountry(String city, String country);
+    boolean existsCityByCityAndCountry(String city, String country);
 }

@@ -1,3 +1,17 @@
+jQuery.each(["put", "delete"], function (i, method) {
+    jQuery[method] = function (url, data, callback, error) {
+        return jQuery.ajax({
+            url: "http://localhost:8080" + url,
+            type: method,
+            dataType: "json",
+            data: data,
+            async: false,
+            success: callback,
+            error: error
+        });
+    };
+});
+
 function clearGridGoogleBoundingBoxes() {
     griGoogleBoundingBoxes.forEach(function (boundingBox) {
         boundingBox.setMap(null);
@@ -18,7 +32,7 @@ var googleRectangle = function (boundingBox, color) {
         strokeOpacity: 1,
         strokeWeight: 2,
         fillOpacity: 0.05,
-        map: googleMap,
+        map: MAP_GOOGLE,
         bounds: {
             north: boundingBox.northEast.latitude,
             south: boundingBox.southWest.latitude,
@@ -31,7 +45,7 @@ var googleRectangle = function (boundingBox, color) {
 var googleMarker = function (venue) {
     return new google.maps.Marker({
         position: {lat: venue.location.latitude, lng: venue.location.longitude},
-        map: googleMap,
+        map: MAP_GOOGLE,
         animation: google.maps.Animation.DROP,
         title: venue.title
     })

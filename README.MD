@@ -11,7 +11,7 @@
     - [x] Spring Boot Property Configuration with *.yml
     - [x] Spring MVC project structure best practices
 - [x] Gradle build tool
-- [x] API visualization based on Swagger framework
+- [x] Swagger
 - [x] Lombok plugin (@Get / @Set / @Builder / @SneakyThrows / @Slf4j)
 - [x] PostgreSQL
     - [x] HikariCP   
@@ -40,4 +40,6 @@
 - [x] Smart rest calls
     - [x] Service does small pauses after unsuccessfully calls and try repeat call 
 - [x] 2 data source supporting
-    - [x] Introduce several abstraction layers (OOP)    
+    - [x] Introduce several abstraction layers (OOP)
+- [x] API visualization based on Swagger framework    
+- [x] Migrate to jQuery functionality interface 

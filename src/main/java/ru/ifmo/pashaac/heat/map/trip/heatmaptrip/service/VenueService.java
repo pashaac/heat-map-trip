@@ -89,13 +89,14 @@ public class VenueService {
     }
 
     @Transactional
-    public List<Venue> quadTreeMineIfNeeded(City city, Source source, List<Category> categories) {
+    public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<Category> categories) {
+
         List<String> strCategories = categoryService.convertCategories(categories);
         List<Venue> venues = new ArrayList<>();
 
         List<String> mineCategories = new ArrayList<>();
         for (String category : strCategories) {
-            List<Venue> categoryVenues = venueRepository.findVenuesByCityAndCategory(city, category);
+            List<Venue> categoryVenues = venueRepository.findVenuesByCity_IdAndCategory(cityId, category);
             if (CollectionUtils.isEmpty(categoryVenues)) {
                 mineCategories.add(category);
             } else {
@@ -106,8 +107,8 @@ public class VenueService {
         if (CollectionUtils.isEmpty(mineCategories)) {
             return venues;
         }
-
-        List<Venue> minedVenues = quadTreeMine(city, source, categoryService.valueOf(strCategories));
+        // TODO: fix city
+        List<Venue> minedVenues = quadTreeMine(null, source, categoryService.valueOf(strCategories));
         venues.addAll(minedVenues);
         return venues;
     }

@@ -1,7 +1,10 @@
-var googleMap;
 var googleMapCity;
 
+var MAP_GOOGLE;
+var MAP_CITY_KEY = 'google-map-city';
+
 var griGoogleBoundingBoxes = [];
+
 // var googleMarkers = [];
 
 function url(url) {
@@ -15,54 +18,59 @@ function googleMapInitialization() {
         scaleControl: true,
         language: 'ru'
     };
-    googleMap = new google.maps.Map(document.getElementById('google-map'), mapOptions);
+    MAP_GOOGLE = new google.maps.Map($("#google-map")[0], mapOptions);
 }
 
-function googleSearchBoxInitialization() {
-    var googleSearchBox = document.getElementById("google-city-search-box");
-    googleSearchBox.addEventListener('change', function (event) {
-        googleMapCity = undefined;
-        googleSearchBox.invalid = true;
+function googleMapSearchBoxInitialization() {
+    var $googleMapCitySearchBox = $("#google-map-city-search-box");
+    $googleMapCitySearchBox.change(function () {
+        sessionStorage.removeItem(MAP_CITY_KEY);
+        this.invalid = true;
     });
-    var autocomplete = new google.maps.places.Autocomplete(googleSearchBox, {types: ['(cities)']});
-    autocomplete.bindTo('bounds', googleMap);
+    var autocomplete = new google.maps.places.Autocomplete($googleMapCitySearchBox[0], {types: ['(cities)']});
+    autocomplete.bindTo('bounds', MAP_GOOGLE);
     autocomplete.addListener('place_changed', function () {
         var place = autocomplete.getPlace();
         if (place.geometry) {
-            var location = place.geometry.location;
-            googleSearchBox.value = place.formatted_address;
-            googleSearchBox.invalid = false;
-            geolocationReverse({lat: location.lat(), lng: location.lng()}, function (city) {
-                console.log('geolocation reverse city: ' + JSON.stringify(city));
+            $googleMapCitySearchBox.val(place.formatted_address);
+            $googleMapCitySearchBox.prop("invalid", false);
+
+            var params = $.param({lat: place.geometry.location.lat(), lng: place.geometry.location.lng()});
+            console.log("search box user item geolocation coordinates: " + params);
+            $.put("/geolocation/reverse?" + params, undefined, function (city) {
                 var southwest = {lat: city.boundingBox.southWest.latitude, lng: city.boundingBox.southWest.longitude};
                 var northeast = {lat: city.boundingBox.northEast.latitude, lng: city.boundingBox.northEast.longitude};
-                googleMap.fitBounds(new google.maps.LatLngBounds(southwest, northeast));
-                googleMapCity = city;
+                MAP_GOOGLE.fitBounds(new google.maps.LatLngBounds(southwest, northeast));
+                sessionStorage.setItem(MAP_CITY_KEY, JSON.stringify(city));
+                console.log('City: \'' + city.city + '\' with id \'' + city.id + '\' was saved to session storage by key \'google-map-city\'');
+                $("#google-map-city-search-box").val(city.city + ', ' + city.country);
             }, function () {
-                console.error("Heat-Map geolocation service temporary unavailable...");
-                alert("Heat-Map geolocation service temporary unavailable...");
-                googleMapCity = undefined;
+                console.warn("Heat-map geolocation service temporary unavailable...");
+                alert("Heat-Map geolocation service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
+                sessionStorage.removeItem(MAP_CITY_KEY);
+                $googleMapCitySearchBox.prop("invalid", true);
             });
         } else {
-            console.error("Google Map geolocation service temporary unavailable or entered error place...");
-            alert("Google Map geolocation service temporary unavailable or entered error place...");
-            googleMapCity = undefined;
-            googleSearchBox.invalid = true;
+            console.error("Heat-map geolocation service temporary unavailable or used incorrect place...");
+            alert("Heat-map geolocation service temporary unavailable or used incorrect place...\nRepeat your last act after some pause or contact with developer");
+            sessionStorage.removeItem(MAP_CITY_KEY);
+            $googleMapCitySearchBox.prop("invalid", true);
         }
     });
 }
 
-function googleDataSourceInitialization() {
-    document.getElementById('data-source-dropdown').addEventListener('close', function (event) {
-        if (this.invalid) {
-            var flag = true;
-            this.$.list.items.forEach(function (item) {
-              if (item.getAttribute('focused') != null) {
-                   flag = false;
-              }
-            });
-            this.invalid = flag;
+function googleMapVenueSourceInitialization() {
+    $("#google-map-venue-source").bind("close", function () {
+        if (!this.invalid) {
+            return;
         }
+        var googleMapVenueSource = this;
+        $(this).children().each(function () {
+            if ($(this).prop('focused')) {
+                googleMapVenueSource.invalid = false;
+                return false;
+            }
+        });
     });
 }
 
@@ -84,29 +92,68 @@ function googleCategoriesInitialization() {
     });
 }
 
-function googleGriSliderInitialization() {
-    document.getElementById('grid-slider').addEventListener('change', function (event) {
+function googleMapGriSliderInitialization() {
+    $("#grid-slider").change(function () {
         this.disabled = true;
         clearGridGoogleBoundingBoxes();
         if (event.target.value === 0) {
             this.disabled = false;
             return;
         }
-        geolocationCityGrid(event.target.value, googleMapCity.boundingBox, function (boundingBoxes) {
+        gridBoundingBoxController(event.target.value, googleMapCity.boundingBox, function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
                 griGoogleBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
             });
             document.getElementById('grid-slider').disabled = false;
         });
+    });
+    // document.getElementById('grid-slider').addEventListener('change', function (event) {
+    //
+    // })
+}
+
+function googleMapClearInitialization() {
+    $("#map-clear-button").click(function () {
+        $("#grid-slider").val(0).change();
     })
+}
+
+function googleMapValidateButtonInitialization() {
+    $("#map-validate-button").click(function () {
+        if (sessionStorage.getItem(MAP_CITY_KEY) === null) {
+            $("#google-map-city-search-box").prop("invalid", true);
+        }
+        var $googleMapVenueSource = $("#google-map-venue-source");
+        if ($googleMapVenueSource.val().length === 0) {
+            $googleMapVenueSource.prop("invalid", true);
+        }
+    });
+    // document.getElementById('map-validate-button').addEventListener('click', function (event) {
+
+        // var categories = document.getElementById('categories-dropdown');
+        // if (categories.value == null || categories.value.length === 0) {
+        //     categories.invalid = true;
+        // }
+
+        // if (invalid  === false) {
+        //     venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
+        //         venues.forEach(function (venue) {
+        //             googleMarker(venue);
+        //         })
+        //     })
+        // }
+    // });
 }
 
 function mapComponentsInitialization() {
     googleMapInitialization();
-    googleSearchBoxInitialization();
-    googleDataSourceInitialization();
-    googleCategoriesInitialization();
-    googleGriSliderInitialization();
+    googleMapSearchBoxInitialization();
+    googleMapVenueSourceInitialization();
+    googleMapValidateButtonInitialization();
+    // googleCategoriesInitialization();
+    // googleMapGriSliderInitialization();
+    // googleMapClearInitialization();
+
     // // Categories dropdown
     // document.getElementById("category-source-dropdown").addEventListener('on-paper-dropdown-close', function (event) {
     //     console.log(event);
@@ -118,34 +165,6 @@ function mapComponentsInitialization() {
     //     document.getElementById("category-source-dropdown").selections = categories;
     // });
 
-
-    document.getElementById('test-button').addEventListener('click', function (event) {
-        var invalid = false;
-        if (googleMapCity == null) {
-            var googleSearchBox = document.getElementById("google-city-search-box");
-            googleSearchBox.invalid = true;
-            invalid = true;
-        }
-        var dataSource = document.getElementById("data-source-dropdown");
-        if (dataSource.value == null) {
-            dataSource.invalid = true;
-            invalid  = true;
-        }
-        var categories = document.getElementById('categories-dropdown');
-        if (categories.value == null || categories.value.length === 0) {
-            categories.invalid = true;
-            invalid = true;
-        }
-
-        if (invalid  === false) {
-            venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
-                venues.forEach(function (venue) {
-                    googleMarker(venue);
-                })
-            })
-        }
-    });
-
     // document.getElementById('venue-call').addEventListener('click', function (event) {
     //     venueApiMine(getDataSourceValue(), getSelectedCategoriesArray(), getGoogleMapCityBoundingBox(), function (venueBox) {
     //         venueBox.validVenues.forEach(function (venue) {
@@ -154,7 +173,7 @@ function mapComponentsInitialization() {
     //     });
     // });
     //
-    // document.getElementById('data-source-dropdown').addEventListener('iron-select', function (event) {
+    // document.getElementById('google-map-venue-source').addEventListener('iron-select', function (event) {
     //     this.invalid = false;
     // })
 
@@ -193,10 +212,6 @@ function mapComponentsInitialization() {
     // })
 }
 
-
-function getDataSourceValue() {
-    return document.getElementById("data-source-dropdown").value;
-}
 
 function getSelectedCategoriesArray() {
     return document.getElementById("categories-dropdown").value;
