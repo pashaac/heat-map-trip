@@ -74,23 +74,23 @@ function googleMapVenueSourceInitialization() {
     });
 }
 
-function googleCategoriesInitialization() {
-    venueCategories(function (categories) {
-        var domBindCategories = document.getElementById('dom-categories');
-        var items = [];
-        categories.forEach(function (category) {
-            items.push({value: category});
-        });
-        domBindCategories.items = items;
+function googleMapCategoriesInitialization() {
+    $.get("http://localhost:8080" + "/venue/categories", function (categories) {
+        $("#google-map-venue-category-dom").prop('items', $.map(categories, function (category) {
+            return {value: category};
+        }))
     });
-    document.getElementById('categories-dropdown').addEventListener('close', function (event) {
-        var dropdownValue = this.value.join(', ');
-        if (this.invalid && dropdownValue != null && dropdownValue.length !== 0) {
-            this.invalid = false;
+    $("#google-map-venue-category").bind("close", function () {
+        var categoriesStr = this.value.join(' | ');
+        if (!categoriesStr) {
+            return;
         }
-        this.$.dropdownMenu.value = dropdownValue;
-    });
+        $(this.$).prop('dropdownMenu').value = categoriesStr;
+        this.invalid = false;
+    })
 }
+
+
 
 function googleMapGriSliderInitialization() {
     $("#grid-slider").change(function () {
@@ -120,37 +120,37 @@ function googleMapClearInitialization() {
 
 function googleMapValidateButtonInitialization() {
     $("#map-validate-button").click(function () {
-        if (sessionStorage.getItem(MAP_CITY_KEY) === null) {
+        if (!sessionStorage.getItem(MAP_CITY_KEY)) {
             $("#google-map-city-search-box").prop("invalid", true);
         }
         var $googleMapVenueSource = $("#google-map-venue-source");
-        if ($googleMapVenueSource.val().length === 0) {
+        if (!$googleMapVenueSource.val()) {
             $googleMapVenueSource.prop("invalid", true);
+        }
+        var $googleMapVenueCategory = $("#google-map-venue-category");
+        if (!$googleMapVenueCategory.val().length) {
+            $googleMapVenueCategory.prop("invalid", true);
         }
     });
     // document.getElementById('map-validate-button').addEventListener('click', function (event) {
 
-        // var categories = document.getElementById('categories-dropdown');
-        // if (categories.value == null || categories.value.length === 0) {
-        //     categories.invalid = true;
-        // }
+    // var categories = document.getElementById('google-map-venue-category');
+    // if (categories.value == null || categories.value.length === 0) {
+    //     categories.invalid = true;
+    // }
 
-        // if (invalid  === false) {
-        //     venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
-        //         venues.forEach(function (venue) {
-        //             googleMarker(venue);
-        //         })
-        //     })
-        // }
+    // if (invalid  === false) {
+    //     venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
+    //         venues.forEach(function (venue) {
+    //             googleMarker(venue);
+    //         })
+    //     })
+    // }
     // });
 }
 
 function mapComponentsInitialization() {
-    googleMapInitialization();
-    googleMapSearchBoxInitialization();
-    googleMapVenueSourceInitialization();
-    googleMapValidateButtonInitialization();
-    // googleCategoriesInitialization();
+
     // googleMapGriSliderInitialization();
     // googleMapClearInitialization();
 
@@ -210,9 +210,4 @@ function mapComponentsInitialization() {
     //         heatmap.setData(testData);
     //     }
     // })
-}
-
-
-function getSelectedCategoriesArray() {
-    return document.getElementById("categories-dropdown").value;
 }

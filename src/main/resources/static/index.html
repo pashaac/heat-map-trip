@@ -44,9 +44,9 @@
     <paper-item value="foursquare">Foursquare</paper-item>
 </paper-dropdown>
 
-<dom-bind id="dom-categories">
+<dom-bind id="google-map-venue-category-dom">
     <template>
-        <paper-dropdown id="categories-dropdown" label="Select any category" value="{{value}}" searchable multi
+        <paper-dropdown id="google-map-venue-category" label="Select any category" value="{{value}}" searchable multi
                         error-message="Select at least one of any categories from dropdown!">
             <template is="dom-repeat" items="{{items}}">
                 <paper-item value$="{{item.value}}">{{item.value}}</paper-item>
@@ -62,7 +62,12 @@
 <paper-button id="map-validate-button" toggles raised>validate</paper-button>
 
 <script>
-    mapComponentsInitialization();
+    googleMapInitialization();
+    googleMapSearchBoxInitialization();
+    googleMapVenueSourceInitialization();
+    googleMapValidateButtonInitialization();
+    googleMapCategoriesInitialization();
+
     geolocationReverseBrowser();
 </script>
 </body>
