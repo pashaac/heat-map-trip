@@ -42,4 +42,5 @@
 - [x] 2 data source supporting
     - [x] Introduce several abstraction layers (OOP)
 - [x] API visualization based on Swagger framework    
-- [x] Migrate to jQuery functionality interface 
+- [x] Migrate to jQuery functionality interface
+- [ ] Add spinner and disabled feature 

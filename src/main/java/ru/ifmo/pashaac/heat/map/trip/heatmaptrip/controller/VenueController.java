@@ -44,7 +44,7 @@ public class VenueController {
     }
 
     @RequestMapping(path = "/city/mine", method = RequestMethod.PUT)
-    public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "City of the search", required = true) Long cityId,
+    public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
                                       @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                       @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") List<String> categories) {
         return venueService.quadTreeMineIfNeeded(cityId, source, categoryService.valueOf(categories));
@@ -53,9 +53,7 @@ public class VenueController {
     @RequestMapping(value = "/categories", method = RequestMethod.GET)
     @ApiOperation(value = "Available categories")
     public List<String> getVenueCategories() {
-        List<String> categories = categoryService.getVenueCategories();
-        log.info("Venue categories: {}", categories);
-        return categories;
+        return categoryService.getVenueCategories();
     }
 
 }

@@ -37,7 +37,7 @@ html, body {
     z-index: 1;
 }
 
-#grid-slider {
+#google-map-city-grid-slider {
     position: absolute;
     top: 14px;
     min-width: 275px;
@@ -57,6 +57,30 @@ html, body {
     position: absolute;
     font-family: sans-serif;
     top: 105px;
+    left: 5px;
+    z-index: 1;
+}
+
+#map-show-venues-button {
+    position: absolute;
+    font-family: sans-serif;
+    top: 155px;
+    left: 5px;
+    z-index: 1;
+}
+
+#map-show-venues-spinner {
+    position: absolute;
+    font-family: sans-serif;
+    top: 155px;
+    left: 105px;
+    z-index: 1;
+}
+
+#map-build-heat-map-button {
+    position: absolute;
+    font-family: sans-serif;
+    top: 205px;
     left: 5px;
     z-index: 1;
 }

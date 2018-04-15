@@ -3,14 +3,15 @@ var googleMapCity;
 var MAP_GOOGLE;
 var MAP_CITY_KEY = 'google-map-city';
 
-var griGoogleBoundingBoxes = [];
-
-// var googleMarkers = [];
+var griBoundingBoxes = [];
+var venueMarkers = [];
+var venues = [];
 
 function url(url) {
     return 'http://localhost:8080' + url;
 }
 
+// Google Map
 function googleMapInitialization() {
     var mapOptions = {
         center: {lat: 59.957570, lng: 30.307946}, // ITMO University
@@ -21,6 +22,7 @@ function googleMapInitialization() {
     MAP_GOOGLE = new google.maps.Map($("#google-map")[0], mapOptions);
 }
 
+// Search box (cities search panel)
 function googleMapSearchBoxInitialization() {
     var $googleMapCitySearchBox = $("#google-map-city-search-box");
     $googleMapCitySearchBox.change(function () {
@@ -59,6 +61,7 @@ function googleMapSearchBoxInitialization() {
     });
 }
 
+// Venue source dropdown: FOURSQUARE / GOOGLE
 function googleMapVenueSourceInitialization() {
     $("#google-map-venue-source").bind("close", function () {
         if (!this.invalid) {
@@ -74,6 +77,7 @@ function googleMapVenueSourceInitialization() {
     });
 }
 
+// Heat-Map service categories from server
 function googleMapCategoriesInitialization() {
     $.get("http://localhost:8080" + "/venue/categories", function (categories) {
         $("#google-map-venue-category-dom").prop('items', $.map(categories, function (category) {
@@ -90,124 +94,109 @@ function googleMapCategoriesInitialization() {
     })
 }
 
-
-
+// Grid count slider
 function googleMapGriSliderInitialization() {
-    $("#grid-slider").change(function () {
+    $("#google-map-city-grid-slider").change(function () {
         this.disabled = true;
-        clearGridGoogleBoundingBoxes();
-        if (event.target.value === 0) {
+        clearGridBoundingBoxes();
+        if (this.value === 0) {
             this.disabled = false;
             return;
         }
-        gridBoundingBoxController(event.target.value, googleMapCity.boundingBox, function (boundingBoxes) {
+        var params = jQuery.param({grid: this.value});
+        var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
+        var slider = this;
+        $.put("/geolocation/grid/boundingbox?" + params, JSON.stringify(city.boundingBox), function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
-                griGoogleBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
+                griBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
             });
-            document.getElementById('grid-slider').disabled = false;
+            slider.disabled = false;
+        }, function () {
+            console.error("Heat-map grid service temporary unavailable...");
+            alert("Heat-map grid service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
         });
     });
-    // document.getElementById('grid-slider').addEventListener('change', function (event) {
-    //
-    // })
 }
 
 function googleMapClearInitialization() {
     $("#map-clear-button").click(function () {
-        $("#grid-slider").val(0).change();
+        $("#google-map-city-grid-slider").val(0).change();
+        clearVenueMarkers();
+        venues = [];
     })
+}
+
+function isValidEnvironment() {
+    var valid = true;
+    if (!sessionStorage.getItem(MAP_CITY_KEY)) {
+        $("#google-map-city-search-box").prop("invalid", true);
+        valid = false;
+    }
+    var $googleMapVenueSource = $("#google-map-venue-source");
+    if (!$googleMapVenueSource.val()) {
+        $googleMapVenueSource.prop("invalid", true);
+        valid = true;
+    }
+    var $googleMapVenueCategory = $("#google-map-venue-category");
+    if (!$googleMapVenueCategory.val().length) {
+        $googleMapVenueCategory.prop("invalid", true);
+        valid = true;
+    }
+    return valid;
 }
 
 function googleMapValidateButtonInitialization() {
     $("#map-validate-button").click(function () {
-        if (!sessionStorage.getItem(MAP_CITY_KEY)) {
-            $("#google-map-city-search-box").prop("invalid", true);
-        }
-        var $googleMapVenueSource = $("#google-map-venue-source");
-        if (!$googleMapVenueSource.val()) {
-            $googleMapVenueSource.prop("invalid", true);
-        }
-        var $googleMapVenueCategory = $("#google-map-venue-category");
-        if (!$googleMapVenueCategory.val().length) {
-            $googleMapVenueCategory.prop("invalid", true);
-        }
+        isValidEnvironment();
     });
-    // document.getElementById('map-validate-button').addEventListener('click', function (event) {
-
-    // var categories = document.getElementById('google-map-venue-category');
-    // if (categories.value == null || categories.value.length === 0) {
-    //     categories.invalid = true;
-    // }
-
-    // if (invalid  === false) {
-    //     venueCityMine(getDataSourceValue(), getSelectedCategoriesArray(), googleMapCity, function (venues) {
-    //         venues.forEach(function (venue) {
-    //             googleMarker(venue);
-    //         })
-    //     })
-    // }
-    // });
 }
 
-function mapComponentsInitialization() {
+function googleMapShowVenuesButtonInitialization() {
+    $("#map-show-venues-button").click(function () {
+        if (!isValidEnvironment()) {
+            return;
+        }
+        var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
+        var categories = $("#google-map-venue-category").val();
+        var source = $("#google-map-venue-source").val();
+        var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
 
-    // googleMapGriSliderInitialization();
-    // googleMapClearInitialization();
-
-    // // Categories dropdown
-    // document.getElementById("category-source-dropdown").addEventListener('on-paper-dropdown-close', function (event) {
-    //     console.log(event);
-    //     if (this._value.length === 0) {
-    //         this._value = undefined;
-    //     }
-    // });
-    // categoryAll(function (categories) {
-    //     document.getElementById("category-source-dropdown").selections = categories;
-    // });
-
-    // document.getElementById('venue-call').addEventListener('click', function (event) {
-    //     venueApiMine(getDataSourceValue(), getSelectedCategoriesArray(), getGoogleMapCityBoundingBox(), function (venueBox) {
-    //         venueBox.validVenues.forEach(function (venue) {
-    //             googleMarker(venue);
-    //         })
-    //     });
-    // });
-    //
-    // document.getElementById('google-map-venue-source').addEventListener('iron-select', function (event) {
-    //     this.invalid = false;
-    // })
-
-
-    // heatmap = new HeatmapOverlay(map,
-    //     {
-    //         "radius": 0.01,
-    //         "maxOpacity": 0.7,
-    //         "scaleRadius": true,
-    //         "useLocalExtrema": true,
-    //         latField: 'lat',
-    //         lngField: 'lng',
-    //         valueField: 'rating'
-    //     }
-    // );
-    //
-    //
-    // jQuery.ajax({
-    //     type: "GET",
-    //     dataType: "json",
-    //     url: "http://localhost:8080/venue/api/call?latitude=59.957570&longitude=30.307946&radius=2000&source=GOOGLE",
-    //     success: function (venues) {
-    //         var testData = {max: 0, data: []};
-    //         venues.forEach(function (venue) {
-    //             console.log(venue);
-    //             testData.data.push({
-    //                 lat: venue.location.latitude,
-    //                 lng: venue.location.longitude,
-    //                 rating: venue.rating
-    //             });
-    //             // count: parseInt(parseFloat(venue.rating) * 10, 10)                 });
-    //         });
-    //         console.log(testData);
-    //         heatmap.setData(testData);
-    //     }
-    // })
+        $.put("/venue/city/mine?" + params, undefined, function (_venues) {
+            _venues.forEach(function (venue) {
+                venueMarkers.push(googleMarker(venue));
+            });
+            venues = venues.concat(_venues);
+        }, function () {
+            console.error("Heat-map venues mine service temporary unavailable...");
+            alert("Heat-map venues mine service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
+        });
+    })
 }
+
+function googleMapBuildHeatMapButtonInitialization() {
+    $("#map-build-heat-map-button").click(function () {
+        isValidEnvironment();
+        if (venues.length === 0) {
+            return;
+        }
+        var heatMapOptions = {
+            "radius": 0.01,
+            "maxOpacity": 0.7,
+            "scaleRadius": true,
+            "useLocalExtrema": true,
+            latField: 'latitude',
+            lngField: 'longitude',
+            valueField: 'rating'
+        };
+
+        heatmap = new HeatmapOverlay(MAP_GOOGLE, heatMapOptions);
+
+        var heatMapData = $.map(venues, function (venue) {
+            return {latitude: venue.location.latitude, longitude: venue.location.longitude, rating: venue.rating};
+        });
+
+        heatmap.setData({data: heatMapData, max: 0});
+    });
+}
+
+

@@ -22,16 +22,3 @@ function venueCategories(callback) {
         success: callback
     });
 }
-
-function gridBoundingBoxController(box, grid, callback) {
-    console.log(url('/geolocation/grid/boundingbox'));
-    jQuery.ajax({
-        type: "PUT",
-        dataType: "json",
-        contentType: 'application/json',
-        url: url('/geolocation/grid/boundingbox?') + jQuery.param({grid: grid}),
-        data: JSON.stringify(box),
-        cache: false,
-        success: callback
-    });
-}

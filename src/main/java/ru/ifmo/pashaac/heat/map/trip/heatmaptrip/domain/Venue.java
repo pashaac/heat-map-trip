@@ -28,6 +28,7 @@ public class Venue {
     private String description;
 
     private String category;
+
     @Enumerated(EnumType.STRING)
     private Source source;
 

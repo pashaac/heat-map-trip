@@ -5,8 +5,7 @@
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
 
     <!-- .js files with business logic -->
-    <script type="text/javascript" src="animation.js"></script> <!-- TODO Remove in future or create better -->
-    <script type="text/javascript" src="utils.js"></script>
+    <script type="text/javascript" src="google-map-utils.js"></script>
     <script type="text/javascript" src="google-map.js"></script>
     <script type="text/javascript" src="geolocation-controller.js"></script>
     <script type="text/javascript" src="venue-controller.js"></script>
@@ -26,6 +25,7 @@
     <link rel="import" href="bower_components/paper-button/paper-button.html">
     <link rel="import" href="bower_components/paper-dropdown/paper-dropdown.html">
     <link rel="import" href="bower_components/paper-slider/paper-slider.html">
+    <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
     <link rel="import" href="bower_components/iron-icon/iron-icon.html">
     <link rel="import" href="bower_components/neon-animation/web-animations.html">
     <link rel="import" href="bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
@@ -55,18 +55,28 @@
     </template>
 </dom-bind>
 
-<paper-slider id="grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="32" max-markers="32"
-              step="1" value="0"></paper-slider>
+<paper-slider id="google-map-city-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="32"
+              max-markers="32" step="1" value="0"></paper-slider>
 
-<paper-button id="map-clear-button" toggles raised>clear</paper-button>
-<paper-button id="map-validate-button" toggles raised>validate</paper-button>
+<paper-button id="map-clear-button" raised>clear</paper-button>
+<paper-button id="map-validate-button" raised>validate</paper-button>
+<paper-button id="map-show-venues-button" raised>Show venues</paper-button>
+<paper-button id="map-build-heat-map-button" raised>Build Heat Map</paper-button>
+<!--<paper-spinner id="map-show-venues-spinner"></paper-spinner>-->
+
+
 
 <script>
     googleMapInitialization();
     googleMapSearchBoxInitialization();
     googleMapVenueSourceInitialization();
-    googleMapValidateButtonInitialization();
     googleMapCategoriesInitialization();
+    googleMapGriSliderInitialization();
+
+    googleMapClearInitialization();
+    googleMapValidateButtonInitialization();
+    googleMapShowVenuesButtonInitialization();
+    googleMapBuildHeatMapButtonInitialization();
 
     geolocationReverseBrowser();
 </script>

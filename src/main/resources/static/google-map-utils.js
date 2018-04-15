@@ -3,6 +3,7 @@ jQuery.each(["put", "delete"], function (i, method) {
         return jQuery.ajax({
             url: "http://localhost:8080" + url,
             type: method,
+            contentType: "application/json",
             dataType: "json",
             data: data,
             async: false,
@@ -12,18 +13,18 @@ jQuery.each(["put", "delete"], function (i, method) {
     };
 });
 
-function clearGridGoogleBoundingBoxes() {
-    griGoogleBoundingBoxes.forEach(function (boundingBox) {
+function clearGridBoundingBoxes() {
+    griBoundingBoxes.forEach(function (boundingBox) {
         boundingBox.setMap(null);
     });
-    griGoogleBoundingBoxes = [];
+    griBoundingBoxes = [];
 }
 
-function clearGoogleMarkers() {
-    googleMarkers.forEach(function (marker) {
+function clearVenueMarkers() {
+    venueMarkers.forEach(function (marker) {
         marker.setMap(null);
     });
-    googleMarkers = [];
+    venueMarkers = [];
 }
 
 var googleRectangle = function (boundingBox, color) {
@@ -47,7 +48,7 @@ var googleMarker = function (venue) {
         position: {lat: venue.location.latitude, lng: venue.location.longitude},
         map: MAP_GOOGLE,
         animation: google.maps.Animation.DROP,
-        title: venue.title
+        title: venue.title + ' (rating: ' + venue.rating + ')'
     })
 };
 

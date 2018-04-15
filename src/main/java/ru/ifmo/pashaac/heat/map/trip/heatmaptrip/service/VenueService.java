@@ -10,6 +10,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.VenueRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
@@ -28,13 +29,15 @@ public class VenueService {
     private final FoursquareService foursquareService;
     private final CategoryService categoryService;
     private final VenueRepository venueRepository;
+    private final CityRepository cityRepository;
 
     @Autowired
-    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, VenueRepository venueRepository) {
+    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, VenueRepository venueRepository, CityRepository cityRepository) {
         this.googleService = googleService;
         this.foursquareService = foursquareService;
         this.categoryService = categoryService;
         this.venueRepository = venueRepository;
+        this.cityRepository = cityRepository;
     }
 
     public VenueMiner sourceMiner(Source source) {
@@ -49,7 +52,11 @@ public class VenueService {
     }
 
     @Transactional
-    public List<Venue> quadTreeMine(City city, Source source, List<Category> categories) {
+    public List<Venue> quadTreeMine(Long cityId, Source source, List<Category> categories) {
+        if (CollectionUtils.isEmpty(categories)) {
+            return Collections.emptyList();
+        }
+        City city = cityRepository.findOne(cityId);
         VenueMiner venueMiner = sourceMiner(source);
         long startTime = System.currentTimeMillis();
         List<Venue> dirtyVenues = new ArrayList<>();
@@ -91,24 +98,20 @@ public class VenueService {
     @Transactional
     public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<Category> categories) {
 
-        List<String> strCategories = categoryService.convertCategories(categories);
+        List<Category> categoriesToMine = new ArrayList<>();
         List<Venue> venues = new ArrayList<>();
-
-        List<String> mineCategories = new ArrayList<>();
-        for (String category : strCategories) {
-            List<Venue> categoryVenues = venueRepository.findVenuesByCity_IdAndCategory(cityId, category);
-            if (CollectionUtils.isEmpty(categoryVenues)) {
-                mineCategories.add(category);
+        for (Category category : categories) {
+            List<Venue> savedVenues = venueRepository.findVenuesByCity_IdAndSourceAndCategory(cityId, source, category.getTitle());
+            if (CollectionUtils.isEmpty(savedVenues)) {
+                log.info("No venues by cityId {}, source = {}, category = {}", savedVenues.size(), cityId, source, category.getTitle());
+                categoriesToMine.add(category);
             } else {
-                venues.addAll(categoryVenues);
+                log.info("Was found {} venues by cityId {}, source = {}, category = {}", savedVenues.size(), cityId, source, category.getTitle());
+                venues.addAll(savedVenues);
             }
         }
 
-        if (CollectionUtils.isEmpty(mineCategories)) {
-            return venues;
-        }
-        // TODO: fix city
-        List<Venue> minedVenues = quadTreeMine(null, source, categoryService.valueOf(strCategories));
+        List<Venue> minedVenues = quadTreeMine(cityId, source, categoriesToMine);
         venues.addAll(minedVenues);
         return venues;
     }
