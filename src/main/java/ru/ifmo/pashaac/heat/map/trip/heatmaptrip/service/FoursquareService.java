@@ -1,21 +1,20 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 import fi.foyt.foursquare.api.FoursquareApiException;
+import fi.foyt.foursquare.api.entities.Category;
 import fi.foyt.foursquare.api.entities.CompactVenue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.client.FoursquareClient;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.FoursquareConfigurationProperties;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -38,12 +37,15 @@ public class FoursquareService implements VenueMiner {
     }
 
     @Override
-    public List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories) {
+    public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            String foursquareApiCategories = categoryService.foursquareApiCategories(categories);
-            List<String> strCategories = categoryService.convertCategories(categories);
-            List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, foursquareApiCategories);
-            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), strCategories);
+            if (StringUtils.isEmpty(boundingBox.getSearchKey())) {
+                log.warn("Empty categories array is incorrect");
+                return Collections.emptyList();
+            }
+            List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, boundingBox.getSearchKey());
+            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), boundingBox.getSearchKey());
+            Map<String, Set<String>> venueToCategories = new HashMap<>();
             return compactVenues.stream()
                     .map(venue -> {
                         Venue fVenue = new Venue();
@@ -68,16 +70,26 @@ public class FoursquareService implements VenueMiner {
                                 venue.getContact().getFacebook(), venue.getId(), venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
                                 venue.getStats().getUsersCount(), venue.getStats().getTipCount()));
 
-
-                        for (fi.foyt.foursquare.api.entities.Category category : venue.getCategories()) {
-                            if (category != null) {
-                                Optional<Category> venueCategory = categoryService.valueOfByFoursquareKey(category.getId());
-                                if (venueCategory.isPresent()) {
-                                    fVenue.setCategory(venueCategory.get().getTitle());
-                                    break;
-                                }
+                        for (Category category : venue.getCategories()) {
+                            if (category == null) {
+                                continue;
                             }
+                            if (!boundingBox.getSearchKey().contains(category.getId())) {
+                                continue;
+                            }
+                            Set<String> categories = venueToCategories.computeIfAbsent(fVenue.getTitle(), key -> new HashSet<>());
+                            if (categories.contains(category.getId())) {
+                                continue;
+                            }
+                            categoryService.valueOfByFoursquareKey(category.getId())
+                                    .ifPresent(fCategory -> {
+                                        fVenue.setCategory(fCategory.getTitle());
+                                        fVenue.setSourceCategory(category.getId());
+                                        categories.add(category.getId());
+                                    });
                         }
+
+                        fVenue.setBoundingBox(boundingBox);
 
                         if (log.isDebugEnabled()) {
                             String debugCategoriesStr = Arrays.stream(venue.getCategories())
@@ -90,15 +102,15 @@ public class FoursquareService implements VenueMiner {
                     })
                     .collect(Collectors.toList());
         } catch (FoursquareApiException e) {
-            log.error("Google API service temporary unavailable or reject call, message {}", e.getMessage());
+            log.error("Foursquare API service temporary unavailable or reject call, message {}", e.getMessage());
             throw new RuntimeException("Foursquare API service temporary unavailable");
         }
     }
 
     @Override
-    public Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories) {
+    public Optional<List<Venue>> apiMine(BoundingBox boundingBox) {
         try {
-            return Optional.of(apiCall(boundingBox, categories));
+            return Optional.of(apiCall(boundingBox));
         } catch (RuntimeException ignored) {
             log.warn("API call failed... Sleep for {} milliseconds before request retry...", foursquareConfigurationProperties.getCallFailDelay());
             try {
@@ -107,7 +119,7 @@ public class FoursquareService implements VenueMiner {
                 log.warn("Thread sleep between foursquare API calls was interrupted");
             }
             try {
-                return Optional.of(apiCall(boundingBox, categories));
+                return Optional.of(apiCall(boundingBox));
             } catch (RuntimeException e) {
                 log.error("Error during foursquare API call, message {}", e.getMessage());
                 return Optional.empty();
@@ -116,8 +128,8 @@ public class FoursquareService implements VenueMiner {
     }
 
     @Override
-    public boolean isReachTheLimit(int venues) {
-        return venues >= foursquareConfigurationProperties.getVenueLimit();
+    public boolean isReachTheLimit(List<Venue> venues) {
+        return venues.size() >= foursquareConfigurationProperties.getVenueLimit();
     }
 
 }

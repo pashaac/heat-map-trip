@@ -3,8 +3,8 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils;
 import com.grum.geocalc.DegreeCoordinate;
 import com.grum.geocalc.EarthCalc;
 import com.grum.geocalc.Point;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 
 import java.util.Arrays;
 import java.util.List;
@@ -58,21 +58,21 @@ public class GeoEarthMathUtils {
     }
 
     private static BoundingBox leftUpBoundingBox(BoundingBox box) {
-        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)));
+        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)), box.getSource(), box.getSearchKey(), box.getCity());
     }
 
     private static BoundingBox leftDownBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(box.getSouthWest(), center);
+        return new BoundingBox(box.getSouthWest(), center, box.getSource(), box.getSearchKey(), box.getCity());
     }
 
     private static BoundingBox rightUpBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(center, box.getNorthEast());
+        return new BoundingBox(center, box.getNorthEast(), box.getSource(), box.getSearchKey(), box.getCity());
     }
 
     private static BoundingBox rightDownBoundingBox(BoundingBox box) {
-        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)));
+        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)), box.getSource(), box.getSearchKey(), box.getCity());
     }
 
     public static List<BoundingBox> getQuarters(BoundingBox box) {

@@ -4,6 +4,8 @@ var MAP_GOOGLE;
 var MAP_CITY_KEY = 'google-map-city';
 
 var griBoundingBoxes = [];
+var failCityBoundingBoxes = [];
+var succCityBoundingBoxes = [];
 var venueMarkers = [];
 var venues = [];
 
@@ -79,7 +81,7 @@ function googleMapVenueSourceInitialization() {
 
 // Heat-Map service categories from server
 function googleMapCategoriesInitialization() {
-    $.get("http://localhost:8080" + "/venue/categories", function (categories) {
+    $.get("http://localhost:8080" + "/categories", function (categories) {
         $("#google-map-venue-category-dom").prop('items', $.map(categories, function (category) {
             return {value: category};
         }))
@@ -106,7 +108,7 @@ function googleMapGriSliderInitialization() {
         var params = jQuery.param({grid: this.value});
         var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
         var slider = this;
-        $.put("/geolocation/grid/boundingbox?" + params, JSON.stringify(city.boundingBox), function (boundingBoxes) {
+        $.put("/boundingboxes/grid?" + params, JSON.stringify(city.boundingBox), function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
                 griBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
             });
@@ -114,14 +116,18 @@ function googleMapGriSliderInitialization() {
         }, function () {
             console.error("Heat-map grid service temporary unavailable...");
             alert("Heat-map grid service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
+            slider.disabled = false;
         });
     });
 }
 
+// Clear button
 function googleMapClearInitialization() {
     $("#map-clear-button").click(function () {
         $("#google-map-city-grid-slider").val(0).change();
         clearVenueMarkers();
+        clearFailCityBoundingBoxes();
+        clearSuccCityBoundingBoxes();
         venues = [];
     })
 }
@@ -135,20 +141,34 @@ function isValidEnvironment() {
     var $googleMapVenueSource = $("#google-map-venue-source");
     if (!$googleMapVenueSource.val()) {
         $googleMapVenueSource.prop("invalid", true);
-        valid = true;
+        valid = false;
     }
     var $googleMapVenueCategory = $("#google-map-venue-category");
     if (!$googleMapVenueCategory.val().length) {
         $googleMapVenueCategory.prop("invalid", true);
-        valid = true;
+        valid = false;
     }
     return valid;
 }
 
 function googleMapValidateButtonInitialization() {
     $("#map-validate-button").click(function () {
-        isValidEnvironment();
-    });
+        if (!isValidEnvironment()) {
+            return;
+        }
+        var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
+        var params = jQuery.param({cityId: city.id});
+        $.get("http://localhost:8080" + "/boundingboxes/fail?" + params, function (boundingBoxes) {
+            boundingBoxes.forEach(function (boundingBox) {
+                failCityBoundingBoxes.push(googleRectangle(boundingBox, 'red'))
+            })
+        });
+        // $.get("http://localhost:8080" + "/boundingboxes/success?" + params, function (boundingBoxes) {
+        //     boundingBoxes.forEach(function (boundingBox) {
+        //         succCityBoundingBoxes.push(googleRectangle(boundingBox, 'green'))
+        //     })
+        // });
+    })
 }
 
 function googleMapShowVenuesButtonInitialization() {
@@ -180,22 +200,22 @@ function googleMapBuildHeatMapButtonInitialization() {
             return;
         }
         var heatMapOptions = {
-            "radius": 0.01,
+            "radius": 0.02,
             "maxOpacity": 0.7,
             "scaleRadius": true,
             "useLocalExtrema": true,
             latField: 'latitude',
             lngField: 'longitude',
-            valueField: 'rating'
+            valueField: 'count'
         };
 
         heatmap = new HeatmapOverlay(MAP_GOOGLE, heatMapOptions);
 
         var heatMapData = $.map(venues, function (venue) {
-            return {latitude: venue.location.latitude, longitude: venue.location.longitude, rating: venue.rating};
+            return {latitude: venue.location.latitude, longitude: venue.location.longitude, count: Math.round(venue.rating / 100)}
         });
 
-        heatmap.setData({data: heatMapData, max: 0});
+        heatmap.setData({data: heatMapData, max: 100});
     });
 }
 

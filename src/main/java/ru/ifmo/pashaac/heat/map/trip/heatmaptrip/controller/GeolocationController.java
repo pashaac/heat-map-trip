@@ -4,12 +4,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.GeolocationService;
-
-import java.util.List;
 
 /**
  * Created by Pavel Asadchiy
@@ -40,13 +37,4 @@ public class GeolocationController {
         return geolocationService.reverseGeolocation(new Marker(lat, lng));
     }
 
-    @RequestMapping(value = "/grid/boundingbox", method = RequestMethod.PUT)
-    @ApiOperation(value = "Create grid for boundingBox  area")
-    public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid,
-                                             @RequestBody @ApiParam(value = "Covered boundingBox area", required = true) BoundingBox boundingBox) {
-        if (grid < 1) {
-            throw new IllegalArgumentException("Grid cells count in row or column should be more then zero");
-        }
-        return geolocationService.gridBoundingBox(boundingBox, grid);
-    }
 }

@@ -1,18 +1,15 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.controller;
 
-import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.CategoryService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,34 +23,34 @@ import java.util.List;
 public class VenueController {
 
     private final VenueService venueService;
-    private final CategoryService categoryService;
 
     @Autowired
-    public VenueController(VenueService venueService, CategoryService categoryService) {
+    public VenueController(VenueService venueService) {
         this.venueService = venueService;
-        this.categoryService = categoryService;
     }
 
     @RequestMapping(path = "/api/call", method = RequestMethod.PUT)
     public VenuesBox getValidVenuesThroughClient(@RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                  @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature") List<String> categories,
                                                  @RequestBody @ApiParam(value = "BoundingBox area of the search", required = true) BoundingBox boundingBox) {
-        List<Venue> dirtyVenues = venueService.sourceMiner(source).apiMine(boundingBox, categoryService.valueOf(categories))
-                .orElse(Collections.emptyList());
-        return venueService.sourceMiner(source).validate(boundingBox, dirtyVenues);
+
+        return venueService.apiMine(boundingBox, source, categories);
     }
 
     @RequestMapping(path = "/city/mine", method = RequestMethod.PUT)
     public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
                                       @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
-                                      @RequestParam @ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") List<String> categories) {
-        return venueService.quadTreeMineIfNeeded(cityId, source, categoryService.valueOf(categories));
+                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        return venueService.quadTreeMineIfNeeded(cityId, source, categories);
     }
 
-    @RequestMapping(value = "/categories", method = RequestMethod.GET)
-    @ApiOperation(value = "Available categories")
-    public List<String> getVenueCategories() {
-        return categoryService.getVenueCategories();
-    }
-
+//    @RequestMapping(value = "/venues/report", method = RequestMethod.GET)
+//    @ApiOperation(value = "Generate Excel report for the city")
+//    public String download(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
+//                           @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+//                           @RequestParam /*@ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") */List<String> categories,
+//                           Model model) {
+//        model.addAttribute("venues", venueService.quadTreeMineIfNeeded(cityId, source, categories));
+//        return "";
+//    }
 }

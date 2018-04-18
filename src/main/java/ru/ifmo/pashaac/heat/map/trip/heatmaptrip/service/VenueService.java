@@ -3,19 +3,20 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
+import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.VenueRepository;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source.FOURSQUARE;
 
 /**
  * Created by Pavel Asadchiy
@@ -28,91 +29,137 @@ public class VenueService {
     private final GoogleService googleService;
     private final FoursquareService foursquareService;
     private final CategoryService categoryService;
-    private final VenueRepository venueRepository;
     private final CityRepository cityRepository;
+    private final VenueTransactionalService venueTransactionalService;
 
     @Autowired
-    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, VenueRepository venueRepository, CityRepository cityRepository) {
+    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, CityRepository cityRepository, VenueTransactionalService venueTransactionalService) {
         this.googleService = googleService;
         this.foursquareService = foursquareService;
         this.categoryService = categoryService;
-        this.venueRepository = venueRepository;
         this.cityRepository = cityRepository;
+        this.venueTransactionalService = venueTransactionalService;
     }
 
-    public VenueMiner sourceMiner(Source source) {
+    public VenuesBox apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
+        VenueMiner venueMiner;
         switch (source) {
             case FOURSQUARE:
-                return foursquareService;
+                venueMiner = foursquareService;
+                boundingBox.setSource(FOURSQUARE);
+                boundingBox.setSearchKey(categoryService.foursquareApiCategories(categoryService.valueOf(categories)));
+                break;
             case GOOGLE:
-                return googleService;
+                venueMiner = googleService;
+                boundingBox.setSource(Source.GOOGLE);
+                boundingBox.setSearchKey(categoryService.googleApiCategories(categoryService.valueOf(categories)));
+                break;
             default:
                 throw new IllegalArgumentException("Incorrect data source type: " + source);
         }
+        List<Venue> dirtyVenues = venueMiner.apiMine(boundingBox).orElse(Collections.emptyList());
+        return venueMiner.validate(boundingBox, dirtyVenues);
     }
 
-    @Transactional
-    public List<Venue> quadTreeMine(Long cityId, Source source, List<Category> categories) {
-        if (CollectionUtils.isEmpty(categories)) {
+    private List<Venue> dirtyVenuesQuadTreeMine(City city, Source source, List<Category> categories) {
+        BoundingBox cityBoundingBox = city.getBoundingBox();
+        switch (source) {
+            case FOURSQUARE:
+                cityBoundingBox.setSource(FOURSQUARE);
+                cityBoundingBox.setSearchKey(categoryService.foursquareApiCategories(categories));
+                break;
+            case GOOGLE:
+                cityBoundingBox.setSource(Source.GOOGLE);
+                cityBoundingBox.setSearchKey(categoryService.googleApiCategories(categories));
+                break;
+            default:
+                throw new IllegalArgumentException("Incorrect data source type: " + source);
+        }
+        BoundingBox savedBoundingBox = venueTransactionalService.save(cityBoundingBox);
+        log.info("Mining places for city {} by categories {} starting...", city.getCity(), categories);
+        return dirtyVenuesQuadTreeMine(savedBoundingBox);
+    }
+
+    public List<Venue> dirtyVenuesQuadTreeMine(BoundingBox boundingBox) {
+        if (StringUtils.isEmpty(boundingBox.getSource())) {
+            log.info("Bounding box with empty search key, skip it");
             return Collections.emptyList();
         }
-        City city = cityRepository.findOne(cityId);
-        VenueMiner venueMiner = sourceMiner(source);
+
         long startTime = System.currentTimeMillis();
-        List<Venue> dirtyVenues = new ArrayList<>();
-        Queue<BoundingBox> boxQueue = new ArrayDeque<>();
-        boxQueue.add(city.getBoundingBox());
+
+        VenueMiner venueMiner;
+        switch (boundingBox.getSource()) {
+            case FOURSQUARE:
+                venueMiner = foursquareService;
+                break;
+            case GOOGLE:
+                venueMiner = googleService;
+                break;
+            default:
+                throw new IllegalArgumentException("Incorrect data source type: " + boundingBox.getSource());
+        }
+
+        Queue<BoundingBox> boxQueue = new ArrayDeque<>(Collections.singleton(boundingBox));
         int ind = 0;
         int apiCallCounter = 0;
+        List<Venue> dirtyVenues = new ArrayList<>();
         while (!boxQueue.isEmpty()) {
-            log.debug("Trying to get places {} for boundingbox #{}...", categories, ind++);
-            BoundingBox boundingBox = boxQueue.poll();
-            Optional<List<Venue>> boundingBoxDirtyVenues = venueMiner.apiMine(boundingBox, categories);
-            if (!boundingBoxDirtyVenues.isPresent()) {
-                log.warn("API call failed, save search area and try repeat in future...");
-//                SearchBoundingBox searchBoundingBox = new SearchBoundingBox();
-//                searchBoundingBox.setBoundingBox(boundingBox);
-//                searchBoundingBox.setSource(source);
-//                searchBoundingBox.setCategories(categoryService.convertCategories(categories));
-//                searchBoundingBoxRepository.saveAndFlush(searchBoundingBox);
-                continue;
-            }
+            log.debug("Trying to get places for boundingBox #{}...", ind++);
+            boundingBox = Optional.ofNullable(boxQueue.poll())
+                    .orElseThrow(() -> new IllegalArgumentException("Null boundingBox during mining process"));
+            Optional<List<Venue>> boundingBoxDirtyVenues = venueMiner.apiMine(boundingBox);
             ++apiCallCounter;
-            if (venueMiner.isReachTheLimit(boundingBoxDirtyVenues.get().size())) {
-                log.debug("Split bounding box, because {} discovered max amount of venues", source);
-                boxQueue.addAll(GeoEarthMathUtils.getQuarters(boundingBox));
+            if (!boundingBoxDirtyVenues.isPresent()) {
+                log.warn("API call failed... Search area already saved... Scheduler try repeat search in future...");
                 continue;
             }
-            dirtyVenues.addAll(boundingBoxDirtyVenues.get());
-            log.info("Was searched: {} {} dirty venues", boundingBoxDirtyVenues.get().size(), source);
+            if (venueMiner.isReachTheLimit(boundingBoxDirtyVenues.get())) {
+                log.debug("Split bounding box, because {} discovered max amount of venues", boundingBox.getSource());
+                List<BoundingBox> quarters = venueTransactionalService.splitBoundingBox(boundingBox);
+                boxQueue.addAll(quarters);
+                continue;
+            }
+            boundingBox.setVenues(boundingBoxDirtyVenues.get());
+            List<Venue> savedVenues = venueTransactionalService.saveVenueBoundingBox(boundingBox).getVenues();
+            dirtyVenues.addAll(savedVenues);
+            log.info("Was searched: {} {} dirty venues", boundingBoxDirtyVenues.get().size(), boundingBox.getSource());
         }
         log.info("API called approximately: {} times", apiCallCounter);
-        List<Venue> validVenues = venueMiner.validate(city.getBoundingBox(), dirtyVenues).getValidVenues().stream()
-                .peek(venue -> venue.setCity(city))
-                .collect(Collectors.toList());
-        log.info("Was searched {} dirty venues, after validation: {}", dirtyVenues.size(), validVenues.size());
+        log.info("Was searched {} dirty venues", dirtyVenues.size());
         log.info("City area was scanned in {} ms", System.currentTimeMillis() - startTime);
-        return venueRepository.save(validVenues);
+        return dirtyVenues;
     }
 
-    @Transactional
-    public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<Category> categories) {
 
-        List<Category> categoriesToMine = new ArrayList<>();
-        List<Venue> venues = new ArrayList<>();
-        for (Category category : categories) {
-            List<Venue> savedVenues = venueRepository.findVenuesByCity_IdAndSourceAndCategory(cityId, source, category.getTitle());
-            if (CollectionUtils.isEmpty(savedVenues)) {
-                log.info("No venues by cityId {}, source = {}, category = {}", savedVenues.size(), cityId, source, category.getTitle());
-                categoriesToMine.add(category);
-            } else {
-                log.info("Was found {} venues by cityId {}, source = {}, category = {}", savedVenues.size(), cityId, source, category.getTitle());
-                venues.addAll(savedVenues);
-            }
-        }
+    public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> strCategories) {
+        City city = cityRepository.findOne(cityId);
+        List<Category> categories = categoryService.valueOf(strCategories);
 
-        List<Venue> minedVenues = quadTreeMine(cityId, source, categoriesToMine);
-        venues.addAll(minedVenues);
-        return venues;
+        Map<Category, List<Venue>> cityCategoryToVenuesMap = categories.stream()
+                .collect(Collectors.toMap(category -> category, category -> city.getBoundingBoxes().stream()
+                        .flatMap(boundingBox -> boundingBox.getVenues().stream())
+                        .filter(venue -> category.getTitle().equals(venue.getCategory()))
+                        .collect(Collectors.toList())));
+
+        List<Category> categoriesToMine = cityCategoryToVenuesMap.entrySet().stream()
+                .filter(entry -> CollectionUtils.isEmpty(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .peek(category -> log.info("No venues in city = {} by source = {}, category = {}", city.getCity(), source, category.getTitle()))
+                .collect(Collectors.toList());
+
+        List<Venue> cityVenues = cityCategoryToVenuesMap.entrySet().stream()
+                .filter(entry -> !CollectionUtils.isEmpty(entry.getValue()))
+                .map(Map.Entry::getValue)
+                .peek(venues -> log.info("Was found {} venues in city = {} by source = {}, category = {}", city.getCity(), source, venues.size()))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        List<Venue> minedDirtyVenues = dirtyVenuesQuadTreeMine(city, source, categoriesToMine);
+
+        cityVenues.addAll(minedDirtyVenues);
+
+        return cityVenues;
     }
+
 }

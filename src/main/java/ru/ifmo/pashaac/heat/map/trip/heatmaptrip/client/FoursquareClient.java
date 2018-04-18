@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 
 import java.util.Arrays;
 import java.util.HashMap;

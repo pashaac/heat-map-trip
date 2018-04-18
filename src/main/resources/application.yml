@@ -120,19 +120,21 @@ venue:
 # ===============================
 spring:
   datasource:
-    type: com.zaxxer.hikari.HikariDataSource
+    platform: postgres
+#    type: com.zaxxer.hikari.HikariDataSource
     url: jdbc:postgresql://localhost:5432/heat-map-trip
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 10000
-      idle-timeout: 10000
+#    hikari:
+#      connection-timeout: 10000
+#      idle-timeout: 10000
   jpa:
+    database: POSTGRESQL
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
     hibernate:
-      ddl-auto: update # (create, create-drop, update) schema will be automatically updated afresh for every start of application
-      naming:
-        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
-        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: create-drop # (create, create-drop, update) schema will be automatically updated afresh for every start of application
+#      naming:
+#        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
+#        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy

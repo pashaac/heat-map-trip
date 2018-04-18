@@ -3,6 +3,7 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 
 import java.util.List;

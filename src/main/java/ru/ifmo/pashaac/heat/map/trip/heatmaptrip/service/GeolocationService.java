@@ -4,16 +4,15 @@ import com.google.maps.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Objects;
 
 /**
  * Created by Pavel Asadchiy
@@ -61,28 +60,28 @@ public class GeolocationService {
                         .filter(addressComponent -> Arrays.asList(addressComponent.types).containsAll(CITY_COMPONENT_TYPES_RESERVE))
                         .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine city geolocation")));
 
-        Bounds box = Arrays.stream(geocodingResults)
-                .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES))
-                .map(geocodingResult -> geocodingResult.geometry.bounds)
-                .findFirst().orElseGet(() -> Arrays.stream(geocodingResults)
-                        .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES_RESERVE))
-                        .map(geocodingResult -> geocodingResult.geometry.bounds)
-                        .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine boundingbox area")));
-
         AddressComponent country = Arrays.stream(geocodingResults)
                 .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(COUNTRY_TYPES))
                 .flatMap(geocodingResult -> Arrays.stream(geocodingResult.addressComponents))
                 .filter(addressComponent -> Arrays.asList(addressComponent.types).containsAll(COUNTRY_COMPONENT_TYPES))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine country geolocation"));
 
-        if (cityRepository.existsCityByCityAndCountry(city.longName, country.longName)) {
-            City savedCity = cityRepository.findCityByCityAndCountry(city.longName, country.longName);
+        City savedCity = cityRepository.findCityByCityAndCountry(city.longName, country.longName);
+        if (Objects.nonNull(savedCity)) {
             log.info("Google geolocation method determined city {}, {} in database by city.name and country.name", savedCity.getCity(), savedCity.getCountry());
             return savedCity;
         }
 
+        Bounds box = Arrays.stream(geocodingResults)
+                .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES))
+                .map(geocodingResult -> geocodingResult.geometry.bounds)
+                .findFirst().orElseGet(() -> Arrays.stream(geocodingResults)
+                        .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES_RESERVE))
+                        .map(geocodingResult -> geocodingResult.geometry.bounds)
+                        .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine boundingBox area")));
+
         BoundingBox boundingBox = new BoundingBox(new Marker(box.southwest.lat, box.southwest.lng), new Marker(box.northeast.lat, box.northeast.lng));
-        City savedCity = cityRepository.saveAndFlush(new City(city.longName, country.longName, boundingBox));
+        savedCity = cityRepository.saveAndFlush(new City(city.longName, country.longName, boundingBox));
         log.info("Google geolocation method determined city {}, {} and saved it into database", savedCity.getCity(), savedCity.getCountry());
         return savedCity;
     }
@@ -92,25 +91,5 @@ public class GeolocationService {
         return GeoEarthMathUtils.center(reverseGeolocation(googleService.geocode(address)).getBoundingBox());
     }
 
-    public List<BoundingBox> gridBoundingBox(BoundingBox boundingBox, int grid) {
-        return IntStream.range(0, grid * grid)
-                .mapToObj(cell -> {
-                    int xWest = cell % grid;
-                    int ySouth = cell / grid;
-
-                    Marker southWest = boundingBox.getSouthWest();
-
-                    Marker southEast = GeoEarthMathUtils.getSouthEast(boundingBox);
-                    double xWestLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) xWest / grid).getLongitude();
-                    double xEastLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) (xWest + 1) / grid).getLongitude();
-
-                    Marker northWest = GeoEarthMathUtils.getNorthWest(boundingBox);
-                    double ySouthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) ySouth / grid).getLatitude();
-                    double yNorthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) (ySouth + 1) / grid).getLatitude();
-
-                    return new BoundingBox(new Marker(ySouthLatitude, xWestLongitude), new Marker(yNorthLatitude, xEastLongitude));
-                })
-                .collect(Collectors.toList());
-    }
 
 }

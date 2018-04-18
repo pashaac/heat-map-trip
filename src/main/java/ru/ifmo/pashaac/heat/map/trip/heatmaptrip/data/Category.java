@@ -12,7 +12,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-@ToString
+@ToString(exclude = {"googleKeys", "foursquareKeys"})
 public class Category {
 
     private String title;

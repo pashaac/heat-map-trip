@@ -6,7 +6,6 @@ jQuery.each(["put", "delete"], function (i, method) {
             contentType: "application/json",
             dataType: "json",
             data: data,
-            async: false,
             success: callback,
             error: error
         });
@@ -18,6 +17,20 @@ function clearGridBoundingBoxes() {
         boundingBox.setMap(null);
     });
     griBoundingBoxes = [];
+}
+
+function clearFailCityBoundingBoxes() {
+    failCityBoundingBoxes.forEach(function (boundingBox) {
+        boundingBox.setMap(null);
+    });
+    failCityBoundingBoxes = [];
+}
+
+function clearSuccCityBoundingBoxes() {
+    succCityBoundingBoxes.forEach(function (boundingBox) {
+        boundingBox.setMap(null);
+    });
+    succCityBoundingBoxes = [];
 }
 
 function clearVenueMarkers() {

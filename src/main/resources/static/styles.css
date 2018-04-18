@@ -9,6 +9,10 @@ html, body {
     height: 100%;
 }
 
+paper-input-container-input {
+    font-size: 30px;
+}
+
 #google-map-city-search-box {
     position: absolute;
     top: 0;

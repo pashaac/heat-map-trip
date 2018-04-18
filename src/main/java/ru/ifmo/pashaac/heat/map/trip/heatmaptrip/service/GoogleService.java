@@ -7,20 +7,18 @@ import com.google.maps.model.PlacesSearchResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.client.GoogleClient;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.GoogleConfigurationProperties;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -43,7 +41,7 @@ public class GoogleService implements VenueMiner {
         this.categoryService = categoryService;
     }
 
-    public GeocodingResult[] reverseGeocode(Marker location) {
+    GeocodingResult[] reverseGeocode(Marker location) {
         try {
             return googleClient.reverseGeocode(new LatLng(location.getLatitude(), location.getLongitude()));
         } catch (ApiException | InterruptedException | IOException e) {
@@ -51,7 +49,7 @@ public class GoogleService implements VenueMiner {
         }
     }
 
-    public GeocodingResult[] geocode(String address) {
+    GeocodingResult[] geocode(String address) {
         try {
             return googleClient.geocode(address);
         } catch (ApiException | InterruptedException | IOException e) {
@@ -61,17 +59,19 @@ public class GoogleService implements VenueMiner {
 
     /**
      * @param boundingBox - area search
-     * @param categories - categories to search
      * @return venues in boundingbox (could return and outside venues)
      */
     @Override
-    public List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories) {
+    public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            String googleApiCategories = categoryService.googleApiCategories(categories);
+            if (StringUtils.isEmpty(boundingBox.getSearchKey())) {
+                log.warn("Empty categories array is incorrect");
+                return Collections.emptyList();
+            }
             Marker center = GeoEarthMathUtils.center(boundingBox);
             int radius = GeoEarthMathUtils.outerRadius(boundingBox);
-            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, googleApiCategories);
-            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), googleApiCategories);
+            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, boundingBox.getSearchKey());
+            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), boundingBox.getSearchKey());
             return placesSearchResults.stream()
                     .map(venue -> {
 
@@ -89,13 +89,15 @@ public class GoogleService implements VenueMiner {
                                         + "\tRating: %s",
                                 venue.placeId, venue.icon, Arrays.toString(venue.types), venue.rating));
 
-                        for (String type : venue.types) {
-                            Optional<Category> venueCategory = categoryService.valueOfByGoogleKey(type);
-                            if (venueCategory.isPresent()) {
-                                gVenue.setCategory(venueCategory.get().getTitle());
-                                break;
-                            }
-                        }
+                        Arrays.stream(venue.types)
+                                .filter(Objects::nonNull)
+                                .filter(googleType -> boundingBox.getSearchKey().contains(googleType))
+                                .map(categoryService::valueOfByGoogleKey)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .findFirst().ifPresent(category -> gVenue.setCategory(category.getTitle()));
+
+                        gVenue.setBoundingBox(boundingBox);
 
                         if (log.isDebugEnabled()) {
                             String debugCategoriesStr = Arrays.stream(venue.types)
@@ -113,9 +115,9 @@ public class GoogleService implements VenueMiner {
 
 
     @Override
-    public Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories) {
+    public Optional<List<Venue>> apiMine(BoundingBox boundingBox) {
         try {
-            return Optional.of(apiCall(boundingBox, categories));
+            return Optional.of(apiCall(boundingBox));
         } catch (RuntimeException ignored) {
             log.info("API call failed... Sleep for {} milliseconds before request retry...", googleConfigurationProperties.getCallFailDelay());
             try {
@@ -124,7 +126,7 @@ public class GoogleService implements VenueMiner {
                 log.warn("Thread sleep between google API calls was interrupted");
             }
             try {
-                return Optional.of(apiCall(boundingBox, categories));
+                return Optional.of(apiCall(boundingBox));
             } catch (RuntimeException e) {
                 log.error("Error during google API call, message {}", e.getMessage());
                 return Optional.empty();
@@ -133,8 +135,8 @@ public class GoogleService implements VenueMiner {
     }
 
     @Override
-    public boolean isReachTheLimit(int venues) {
-        return venues >= googleConfigurationProperties.getVenueLimit();
+    public boolean isReachTheLimit(List<Venue> venues) {
+        return venues.size() >= googleConfigurationProperties.getVenueLimit();
     }
 
 }

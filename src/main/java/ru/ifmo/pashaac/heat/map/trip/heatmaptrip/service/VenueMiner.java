@@ -1,9 +1,8 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
@@ -18,11 +17,11 @@ import java.util.stream.Collectors;
  */
 public interface VenueMiner {
 
-    List<Venue> apiCall(BoundingBox boundingBox, List<Category> categories);
+    List<Venue> apiCall(BoundingBox boundingBox);
 
-    Optional<List<Venue>> apiMine(BoundingBox boundingBox, List<Category> categories);
+    Optional<List<Venue>> apiMine(BoundingBox boundingBox);
 
-    boolean isReachTheLimit(int venues);
+    boolean isReachTheLimit(List<Venue> venues);
 
     default VenuesBox validate(BoundingBox venuesBoundingBox, List<Venue> dirtyVenues) {
         double average = dirtyVenues.stream().mapToDouble(Venue::getRating).average().orElse(0.0);
@@ -37,7 +36,7 @@ public interface VenueMiner {
                 .boundingBoxQuarters(GeoEarthMathUtils.getQuarters(venuesBoundingBox))
                 .dirtyVenues(dirtyVenues)
                 .validVenues(validVenues)
-                .rateTheLimit(isReachTheLimit(dirtyVenues.size()))
+                .rateTheLimit(isReachTheLimit(dirtyVenues))
                 .build();
     }
 

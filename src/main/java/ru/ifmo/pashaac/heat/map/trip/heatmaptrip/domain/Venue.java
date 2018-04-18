@@ -2,6 +2,7 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
@@ -14,8 +15,10 @@ import javax.persistence.*;
  */
 @Getter
 @Setter
+@NoArgsConstructor
+
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"title", "category", "rating"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"title", "latitude", "longitude", "category", "source", "sourceCategory"}))
 public class Venue {
 
     @Id
@@ -32,6 +35,9 @@ public class Venue {
     @Enumerated(EnumType.STRING)
     private Source source;
 
+    private String sourceCategory;
+
+    @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "latitude", column = @Column(name = "latitude")),
             @AttributeOverride(name = "longitude", column = @Column(name = "longitude")),
@@ -41,9 +47,10 @@ public class Venue {
 
     private double rating;
 
-    @JsonBackReference("city-venue")
-    @ManyToOne(targetEntity = City.class)
-    private City city;
+    private boolean valid;
 
+    @JsonBackReference("boundingBox-venues")
+    @ManyToOne(targetEntity = BoundingBox.class, fetch = FetchType.EAGER)
+    private BoundingBox boundingBox;
 
 }

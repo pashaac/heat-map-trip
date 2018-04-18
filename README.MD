@@ -14,7 +14,7 @@
 - [x] Swagger
 - [x] Lombok plugin (@Get / @Set / @Builder / @SneakyThrows / @Slf4j)
 - [x] PostgreSQL
-    - [x] HikariCP   
+    - [ ] HikariCP   
 - [x] Bower WEB build tool
 - [x] WebComponents
 - [x] Material design

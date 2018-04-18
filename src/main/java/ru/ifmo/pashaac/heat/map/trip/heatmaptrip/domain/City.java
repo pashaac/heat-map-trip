@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.BoundingBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -17,8 +17,9 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"city", "country"}))
+
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"city", "country"}))
 public class City {
 
     @Id
@@ -28,21 +29,33 @@ public class City {
     private String city;
     private String country;
 
+    @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "southWest.latitude", column = @Column(name = "southWestLatitude")),
-            @AttributeOverride(name = "southWest.longitude", column = @Column(name = "southWestLongitude")),
-            @AttributeOverride(name = "northEast.latitude", column = @Column(name = "northEastLatitude")),
-            @AttributeOverride(name = "northEast.longitude", column = @Column(name = "northEastLongitude"))
+            @AttributeOverride(name = "latitude", column = @Column(name = "southWestLatitude")),
+            @AttributeOverride(name = "longitude", column = @Column(name = "southWestLongitude")),
     })
-    private BoundingBox boundingBox;
+    private Marker southWest;
 
-    @JsonManagedReference("city-venue")
-    @OneToMany(targetEntity = Venue.class, cascade = CascadeType.REMOVE, mappedBy = "city")
-    private List<Venue> venues = new ArrayList<>();
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "latitude", column = @Column(name = "northEastLatitude")),
+            @AttributeOverride(name = "longitude", column = @Column(name = "northEastLongitude")),
+    })
+    private Marker northEast;
+
+    @JsonManagedReference("city-boundingBoxes")
+    @OneToMany(targetEntity = BoundingBox.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "city")
+    private List<BoundingBox> boundingBoxes = new ArrayList<>();
 
     public City(String city, String country, BoundingBox boundingBox) {
         this.city = city;
         this.country = country;
-        this.boundingBox = boundingBox;
+        this.southWest = boundingBox.getSouthWest();
+        this.northEast = boundingBox.getNorthEast();
+    }
+
+    public BoundingBox getBoundingBox() {
+        return new BoundingBox(southWest, northEast, this)
+                ;
     }
 }
