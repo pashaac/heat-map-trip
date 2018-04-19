@@ -22,7 +22,7 @@ import java.util.List;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"southWestLatitude", "southWestLongitude",
-        "northEastLatitude", "northEastLongitude", "source", "searchKey"}))
+        "northEastLatitude", "northEastLongitude", "source", "categories"}))
 public class BoundingBox {
 
     @Id
@@ -46,10 +46,12 @@ public class BoundingBox {
     @Enumerated(EnumType.STRING)
     private Source source;
 
-    @Column(length = 1024)
-    private String searchKey; // joined list of categories / should be empty only for city boundingBox
+//    @ElementCollection
+//    @CollectionTable(name = "bounding_box_category", joinColumns = @JoinColumn(name = "id", referencedColumnName = "id"))
+//    @Column(name = "category")
+    private String categories; // joined list of categories
 
-    private boolean collect;
+    private boolean valid;
 
     @JsonBackReference("city-boundingBoxes")
     @ManyToOne(targetEntity = City.class, fetch = FetchType.EAGER)
@@ -59,11 +61,11 @@ public class BoundingBox {
     @OneToMany(targetEntity = Venue.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "boundingBox")
     private List<Venue> venues = new ArrayList<>();
 
-    public BoundingBox(Marker southWest, Marker northEast, Source source, String searchKey, City city) {
+    public BoundingBox(Marker southWest, Marker northEast, Source source, String categories, City city) {
         this.southWest = southWest;
         this.northEast = northEast;
+        this.categories = categories;
         this.source = source;
-        this.searchKey = searchKey;
         this.city = city;
     }
 

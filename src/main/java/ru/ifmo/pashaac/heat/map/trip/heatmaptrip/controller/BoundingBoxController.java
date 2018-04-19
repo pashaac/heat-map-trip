@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 
@@ -23,23 +24,27 @@ public class BoundingBoxController {
         this.boundingBoxService = boundingBoxService;
     }
 
-    @RequestMapping(value = "/fail", method = RequestMethod.GET)
-    public List<BoundingBox> getFailBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId) {
-        return boundingBoxService.getFailBoundingBoxes(cityId);
+    @RequestMapping(value = "/invalid", method = RequestMethod.GET)
+    public List<BoundingBox> getInvalidBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                                     @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                                     @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        return boundingBoxService.getInvalidBoundingBoxes(cityId, source, categories);
     }
 
-    @RequestMapping(value = "/success", method = RequestMethod.GET)
-    public List<BoundingBox> getSuccessBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId) {
-        return boundingBoxService.getSuccessBoundingBoxes(cityId);
+    @RequestMapping(value = "/valid", method = RequestMethod.GET)
+    public List<BoundingBox> getSuccessBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                                     @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                                     @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        return boundingBoxService.getValidBoundingBoxes(cityId, source, categories);
     }
 
-    @RequestMapping(value = "/grid", method = RequestMethod.PUT)
+    @RequestMapping(value = "/grid", method = RequestMethod.GET)
     @ApiOperation(value = "Create grid for boundingBox  area")
-    public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid,
-                                             @RequestBody @ApiParam(value = "Covered boundingBox area", required = true) BoundingBox boundingBox) {
+    public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                             @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid) {
         if (grid < 1) {
             throw new IllegalArgumentException("Grid cells count in row or column should be more then zero");
         }
-        return boundingBoxService.gridBoundingBox(boundingBox, grid);
+        return boundingBoxService.gridBoundingBox(cityId, grid);
     }
 }

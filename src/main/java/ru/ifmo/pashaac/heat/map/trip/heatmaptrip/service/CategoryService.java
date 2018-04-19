@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,13 +24,6 @@ public class CategoryService {
         this.venueCategoryConfigurationProperties = venueCategoryConfigurationProperties;
     }
 
-
-    public List<Category> valueOf(List<String> categories) {
-        return venueCategoryConfigurationProperties.getCategories().stream()
-                .filter(category -> categories.contains(category.getTitle()))
-                .collect(Collectors.toList());
-    }
-
     public Optional<Category> valueOfByGoogleKey(String key) {
         return venueCategoryConfigurationProperties.getCategories().stream()
                 .filter(category -> category.getGoogleKeys().contains(key))
@@ -42,14 +36,14 @@ public class CategoryService {
                 .findFirst();
     }
 
-    public String googleApiCategories(List<Category> categories) {
-        return categories.stream()
+    public String googleApiCategories(String categories) {
+        return map(unjoin(categories)).stream()
                 .flatMap(category -> category.getGoogleKeys().stream())
                 .collect(Collectors.joining("|")); // Google separator
     }
 
-    public String foursquareApiCategories(List<Category> categories) {
-        return categories.stream()
+    public String foursquareApiCategories(String categories) {
+        return map(unjoin(categories)).stream()
                 .flatMap(category -> category.getFoursquareKeys().stream())
                 .collect(Collectors.joining(",")); // Foursquare separator
     }
@@ -60,12 +54,26 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
-    public List<String> convertCategories(List<Category> categories) {
+    public List<String> unmap(List<Category> categories) {
         return categories.stream()
                 .map(Category::getTitle)
                 .collect(Collectors.toList());
     }
 
+    public List<Category> map(List<String> categories) {
+        return venueCategoryConfigurationProperties.getCategories().stream()
+                .filter(category -> categories.contains(category.getTitle()))
+                .collect(Collectors.toList());
+    }
 
+    public String join(List<String> categories) {
+        return categories.stream().collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    public List<String> unjoin(String categories) {
+        return Arrays.stream(categories.substring(1, categories.length() - 1).split(", "))
+                .map(String::trim)
+                .collect(Collectors.toList());
+    }
 
 }

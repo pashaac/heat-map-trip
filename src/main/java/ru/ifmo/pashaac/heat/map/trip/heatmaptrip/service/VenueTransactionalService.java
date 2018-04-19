@@ -35,7 +35,7 @@ public class VenueTransactionalService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public BoundingBox saveVenueBoundingBox(BoundingBox boundingBox) {
-        boundingBox.setCollect(true);
+        boundingBox.setValid(true);
         return boundingBoxRepository.save(boundingBox);
     }
 

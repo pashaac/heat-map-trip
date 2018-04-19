@@ -55,7 +55,6 @@ public class City {
     }
 
     public BoundingBox getBoundingBox() {
-        return new BoundingBox(southWest, northEast, this)
-                ;
+        return new BoundingBox(southWest, northEast, this);
     }
 }

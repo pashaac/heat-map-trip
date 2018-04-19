@@ -3,47 +3,57 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.BoundingBoxRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class BoundingBoxService {
 
-    private final CityRepository cityRepository;
     private final BoundingBoxRepository boundingBoxRepository;
+    private final CityRepository cityRepository;
 
     @Autowired
-    public BoundingBoxService(CityRepository cityRepository, BoundingBoxRepository boundingBoxRepository) {
-        this.cityRepository = cityRepository;
+    public BoundingBoxService(BoundingBoxRepository boundingBoxRepository, CityRepository cityRepository) {
         this.boundingBoxRepository = boundingBoxRepository;
+        this.cityRepository = cityRepository;
     }
 
-    public List<BoundingBox> getFailBoundingBoxes(Long cityId) {
-        City city = cityRepository.findOne(cityId);
-        return city.getBoundingBoxes().stream()
-                .filter(boundingBox -> !boundingBox.isCollect())
+    public List<BoundingBox> getInvalidBoundingBoxes(Long cityId, Source source, List<String> categories) {
+        Map<Long, BoundingBox> boundingBoxMap = categories.stream()
+                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsFalseAndSourceAndCategoriesContains(cityId, source, category).stream())
+                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox));
+        return boundingBoxMap.entrySet().stream()
+                .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
     }
 
-    public List<BoundingBox> getFailBoundingBoxes() {
-        return boundingBoxRepository.findBoundingBoxesByCollectIsFalse();
+    public List<BoundingBox> getInvalidBoundingBoxes() {
+        return boundingBoxRepository.findBoundingBoxesByValidIsFalse();
     }
 
-    public List<BoundingBox> getSuccessBoundingBoxes(Long cityId) {
-        City city = cityRepository.findOne(cityId);
-        return city.getBoundingBoxes().stream()
-                .filter(BoundingBox::isCollect)
+    public List<BoundingBox> getValidBoundingBoxes(Long cityId, Source source, List<String> categories) {
+        Map<Long, BoundingBox> boundingBoxMap = categories.stream()
+                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsTrueAndSourceAndCategoriesContains(cityId, source, category).stream())
+                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox));
+        return boundingBoxMap.entrySet().stream()
+                .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
     }
 
-    public List<BoundingBox> gridBoundingBox(BoundingBox boundingBox, int grid) {
+    public List<BoundingBox> getValidBoundingBoxes(Long cityId, Source source, String category) {
+        return boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsTrueAndSourceAndCategoriesContains(cityId, source, category);
+    }
+
+    public List<BoundingBox> gridBoundingBox(Long cityId, int grid) {
+        BoundingBox boundingBox = cityRepository.findOne(cityId).getBoundingBox();
         List<BoundingBox> boundingBoxes = new ArrayList<>();
         for (int xWest = 0; xWest < grid; xWest++) {
             Marker xSouthWest = boundingBox.getSouthWest();
@@ -70,7 +80,7 @@ public class BoundingBoxService {
         }
         return boundingBoxes;
 
-//      Old version which provide bad aligning, not good accurancy
+//      TODO: old version which provide bad aligning, not good accurancy. Only for demonstration
 //        return IntStream.range(0, grid * grid)
 //                .mapToObj(cell -> {
 //                    int xWest = cell % grid;

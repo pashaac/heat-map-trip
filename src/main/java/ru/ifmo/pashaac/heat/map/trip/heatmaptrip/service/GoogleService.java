@@ -11,7 +11,6 @@ import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.client.GoogleClient;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.GoogleConfigurationProperties;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
@@ -64,38 +63,51 @@ public class GoogleService implements VenueMiner {
     @Override
     public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            if (StringUtils.isEmpty(boundingBox.getSearchKey())) {
-                log.warn("Empty categories array is incorrect");
+            if (StringUtils.isEmpty(boundingBox.getCategories())) {
+                log.warn("Empty categories array is incorrect, skip it");
                 return Collections.emptyList();
             }
             Marker center = GeoEarthMathUtils.center(boundingBox);
             int radius = GeoEarthMathUtils.outerRadius(boundingBox);
-            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, boundingBox.getSearchKey());
-            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), boundingBox.getSearchKey());
+            String googleApiCategories = categoryService.googleApiCategories(boundingBox.getCategories());
+            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, googleApiCategories);
+            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), boundingBox.getCategories());
+            Map<String, Set<String>> venueTypes = new HashMap<>();
             return placesSearchResults.stream()
                     .map(venue -> {
 
                         Venue gVenue = new Venue();
                         gVenue.setTitle(VenueUtils.quotation(venue.name));
                         gVenue.setLocation(new Marker(venue.geometry.location.lat, venue.geometry.location.lng));
-                        gVenue.setSource(Source.GOOGLE);
                         gVenue.setRating(venue.rating);
-                        gVenue.setAddress(venue.vicinity);
                         gVenue.setDescription(String.format("Contact info:\n"
                                         + "\t - Id: %s\n"
                                         + "\t - Icon: %s\n"
                                         + "\t - Types: %s\n"
+                                        + "\t - Address: %s\n"
                                         + "Statistic info:\n"
                                         + "\tRating: %s",
-                                venue.placeId, venue.icon, Arrays.toString(venue.types), venue.rating));
+                                venue.placeId, venue.icon, Arrays.toString(venue.types), venue.vicinity, venue.rating));
 
-                        Arrays.stream(venue.types)
+                        List<String> validTypes = Arrays.stream(venue.types)
                                 .filter(Objects::nonNull)
-                                .filter(googleType -> boundingBox.getSearchKey().contains(googleType))
-                                .map(categoryService::valueOfByGoogleKey)
-                                .filter(Optional::isPresent)
-                                .map(Optional::get)
-                                .findFirst().ifPresent(category -> gVenue.setCategory(category.getTitle()));
+                                .filter(googleApiCategories::contains)
+                                .collect(Collectors.toList());
+
+                        for (String validType : validTypes) {
+                            categoryService.valueOfByGoogleKey(validType).ifPresent(category -> {
+                                venueTypes.putIfAbsent(gVenue.getTitle(), new HashSet<>());
+                                Set<String> types = venueTypes.get(gVenue.getTitle());
+                                if (!types.contains(validType)) {
+                                    types.add(validType);
+                                    gVenue.setCategory(category.getTitle());
+                                    gVenue.setType(validType);
+                                }
+                            });
+                            if (!StringUtils.isEmpty(gVenue.getType())) {
+                                break;
+                            }
+                        }
 
                         gVenue.setBoundingBox(boundingBox);
 
@@ -112,7 +124,6 @@ public class GoogleService implements VenueMiner {
             throw new RuntimeException("Google API service temporary unavailable");
         }
     }
-
 
     @Override
     public Optional<List<Venue>> apiMine(BoundingBox boundingBox) {

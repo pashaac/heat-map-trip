@@ -58,21 +58,21 @@ public class GeoEarthMathUtils {
     }
 
     private static BoundingBox leftUpBoundingBox(BoundingBox box) {
-        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)), box.getSource(), box.getSearchKey(), box.getCity());
+        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)), box.getSource(), box.getCategories(), box.getCity());
     }
 
     private static BoundingBox leftDownBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(box.getSouthWest(), center, box.getSource(), box.getSearchKey(), box.getCity());
+        return new BoundingBox(box.getSouthWest(), center, box.getSource(), box.getCategories(), box.getCity());
     }
 
     private static BoundingBox rightUpBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(center, box.getNorthEast(), box.getSource(), box.getSearchKey(), box.getCity());
+        return new BoundingBox(center, box.getNorthEast(), box.getSource(), box.getCategories(), box.getCity());
     }
 
     private static BoundingBox rightDownBoundingBox(BoundingBox box) {
-        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)), box.getSource(), box.getSearchKey(), box.getCity());
+        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)), box.getSource(), box.getCategories(), box.getCity());
     }
 
     public static List<BoundingBox> getQuarters(BoundingBox box) {

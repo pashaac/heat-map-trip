@@ -43,16 +43,16 @@ venue:
         - 4bf58dd8d48988d137941735 # Theater
         - 4bf58dd8d48988d136941735 # Opera House
         - 4bf58dd8d48988d1e2931735 # Art Gallery
-        - 5032792091d4c4b30a586d5c # Concert Hall todo
-        - 52e81612bcbc57f1066b79ed # Outdoor Sculpture todo
-        - 52e81612bcbc57f1066b7a32 # Cultural Center todo
+#        - 5032792091d4c4b30a586d5c # Concert Hall todo
+#        - 52e81612bcbc57f1066b79ed # Outdoor Sculpture todo
+#        - 52e81612bcbc57f1066b7a32 # Cultural Center todo
         - 50aaa49e4b90af0d42d5de11 # Castle
     -
       title: Nature
       google-keys:
         - park
       foursquare-keys:
-        - 52e81612bcbc57f1066b7a24 # Tree todo
+#        - 52e81612bcbc57f1066b7a24 # Tree todo
         - 4bf58dd8d48988d163941735 # Park
         - 4bf58dd8d48988d15a941735 # Garden
         - 52e81612bcbc57f1066b7a23 # Forest
@@ -79,11 +79,11 @@ venue:
         - meal_takeaway # todo
         - restaurant
       foursquare-keys:
-        - 4bf58dd8d48988d1c4941735 # Restaurant
+#        - 4bf58dd8d48988d1c4941735 # Restaurant
         - 5293a7563cf9994f4e043a44 # Russian Restaurant
-        - 4bf58dd8d48988d1c1941735 # Mexican Restaurant
-        - 4bf58dd8d48988d110941735 # Italian Restaurant
-        - 4bf58dd8d48988d10c941735 # French Restaurant
+#        - 4bf58dd8d48988d1c1941735 # Mexican Restaurant
+#        - 4bf58dd8d48988d110941735 # Italian Restaurant
+#        - 4bf58dd8d48988d10c941735 # French Restaurant
     -
       title: Shrine
       google-keys:
@@ -134,7 +134,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
     hibernate:
-      ddl-auto: create-drop # (create, create-drop, update) schema will be automatically updated afresh for every start of application
+      ddl-auto: update # (create, create-drop, update) schema will be automatically updated afresh for every start of application
 #      naming:
 #        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
 #        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy

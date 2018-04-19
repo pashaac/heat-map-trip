@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.VenuesBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
@@ -30,47 +28,48 @@ public class VenueService {
     private final FoursquareService foursquareService;
     private final CategoryService categoryService;
     private final CityRepository cityRepository;
+    private final BoundingBoxService boundingBoxService;
     private final VenueTransactionalService venueTransactionalService;
 
     @Autowired
-    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, CityRepository cityRepository, VenueTransactionalService venueTransactionalService) {
+    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, CityRepository cityRepository, BoundingBoxService boundingBoxService, VenueTransactionalService venueTransactionalService) {
         this.googleService = googleService;
         this.foursquareService = foursquareService;
         this.categoryService = categoryService;
         this.cityRepository = cityRepository;
+        this.boundingBoxService = boundingBoxService;
         this.venueTransactionalService = venueTransactionalService;
     }
 
-    public VenuesBox apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
+    public List<Venue> apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
         VenueMiner venueMiner;
         switch (source) {
             case FOURSQUARE:
                 venueMiner = foursquareService;
                 boundingBox.setSource(FOURSQUARE);
-                boundingBox.setSearchKey(categoryService.foursquareApiCategories(categoryService.valueOf(categories)));
+                boundingBox.setCategories(categoryService.join(categories));
                 break;
             case GOOGLE:
                 venueMiner = googleService;
                 boundingBox.setSource(Source.GOOGLE);
-                boundingBox.setSearchKey(categoryService.googleApiCategories(categoryService.valueOf(categories)));
+                boundingBox.setCategories(categoryService.join(categories));
                 break;
             default:
                 throw new IllegalArgumentException("Incorrect data source type: " + source);
         }
-        List<Venue> dirtyVenues = venueMiner.apiMine(boundingBox).orElse(Collections.emptyList());
-        return venueMiner.validate(boundingBox, dirtyVenues);
+        return venueMiner.apiMine(boundingBox).orElse(Collections.emptyList());
     }
 
-    private List<Venue> dirtyVenuesQuadTreeMine(City city, Source source, List<Category> categories) {
+    private List<Venue> dirtyVenuesQuadTreeMine(City city, Source source, List<String> categories) {
         BoundingBox cityBoundingBox = city.getBoundingBox();
         switch (source) {
             case FOURSQUARE:
                 cityBoundingBox.setSource(FOURSQUARE);
-                cityBoundingBox.setSearchKey(categoryService.foursquareApiCategories(categories));
+                cityBoundingBox.setCategories(categoryService.join(categories));
                 break;
             case GOOGLE:
                 cityBoundingBox.setSource(Source.GOOGLE);
-                cityBoundingBox.setSearchKey(categoryService.googleApiCategories(categories));
+                cityBoundingBox.setCategories(categoryService.join(categories));
                 break;
             default:
                 throw new IllegalArgumentException("Incorrect data source type: " + source);
@@ -132,34 +131,56 @@ public class VenueService {
     }
 
 
-    public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> strCategories) {
-        City city = cityRepository.findOne(cityId);
-        List<Category> categories = categoryService.valueOf(strCategories);
+    public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> categories) {
+        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getInvalidBoundingBoxes(cityId, source, categories);
+        if (!CollectionUtils.isEmpty(invalidBoundingBoxes)) {
+            throw new RuntimeException("Service contains some amount invalid bounding boxes, repeat your request in a few minutes");
+        }
 
-        Map<Category, List<Venue>> cityCategoryToVenuesMap = categories.stream()
-                .collect(Collectors.toMap(category -> category, category -> city.getBoundingBoxes().stream()
-                        .flatMap(boundingBox -> boundingBox.getVenues().stream())
-                        .filter(venue -> category.getTitle().equals(venue.getCategory()))
-                        .collect(Collectors.toList())));
+        List<Venue> dirtyVenues = new ArrayList<>();
+        List<String> notFoundCategories = new ArrayList<>();
+        for (String category : categories) {
+            List<BoundingBox> categoryBoundingBoxes = boundingBoxService.getValidBoundingBoxes(cityId, source, category);
+            if (CollectionUtils.isEmpty(categoryBoundingBoxes)) {
+                notFoundCategories.add(category);
+                continue;
+            }
+            List<Venue> categoryDirtyVenues = categoryBoundingBoxes.stream()
+                    .map(BoundingBox::getVenues)
+                    .flatMap(Collection::stream)
+                    .filter(venue -> category.equals(venue.getCategory()))
+                    .collect(Collectors.toList());
+            dirtyVenues.addAll(categoryDirtyVenues);
+        }
 
-        List<Category> categoriesToMine = cityCategoryToVenuesMap.entrySet().stream()
-                .filter(entry -> CollectionUtils.isEmpty(entry.getValue()))
-                .map(Map.Entry::getKey)
-                .peek(category -> log.info("No venues in city = {} by source = {}, category = {}", city.getCity(), source, category.getTitle()))
-                .collect(Collectors.toList());
+//        List<Category> categories = categoryService.map(strCategories);
+//
+//        Map<Category, List<Venue>> cityCategoryToVenuesMap = categories.stream()
+//                .collect(Collectors.toMap(category -> category, category -> city.getBoundingBoxes().stream()
+//                        .flatMap(boundingBox -> boundingBox.getVenues().stream())
+//                        .filter(venue -> category.getTitle().equals(venue.getCategory()))
+//                        .collect(Collectors.toList())));
+//
+//        List<String> categoriesToMine = cityCategoryToVenuesMap.entrySet().stream()
+//                .filter(entry -> CollectionUtils.isEmpty(entry.getValue()))
+//                .map(Map.Entry::getKey)
+//                .peek(category -> log.info("No venues in city = {} by source = {}, category = {}", city.getCity(), source, category.getTitle()))
+//                .map(Category::getTitle)
+//                .collect(Collectors.toList());
+//
+//        List<Venue> cityVenues = cityCategoryToVenuesMap.entrySet().stream()
+//                .filter(entry -> !CollectionUtils.isEmpty(entry.getValue()))
+//                .map(Map.Entry::getValue)
+//                .peek(venues -> log.info("Was found {} venues in city = {} by source = {}, category = {}", city.getCity(), source, venues.size()))
+//                .flatMap(Collection::stream)
+//                .collect(Collectors.toList());
 
-        List<Venue> cityVenues = cityCategoryToVenuesMap.entrySet().stream()
-                .filter(entry -> !CollectionUtils.isEmpty(entry.getValue()))
-                .map(Map.Entry::getValue)
-                .peek(venues -> log.info("Was found {} venues in city = {} by source = {}, category = {}", city.getCity(), source, venues.size()))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-
-        List<Venue> minedDirtyVenues = dirtyVenuesQuadTreeMine(city, source, categoriesToMine);
-
-        cityVenues.addAll(minedDirtyVenues);
-
-        return cityVenues;
+        if (CollectionUtils.isEmpty(notFoundCategories)) {
+            return dirtyVenues;
+        }
+        List<Venue> minedDirtyVenues = dirtyVenuesQuadTreeMine(cityRepository.findOne(cityId), source, notFoundCategories);
+        dirtyVenues.addAll(minedDirtyVenues);
+        return dirtyVenues;
     }
 
 }

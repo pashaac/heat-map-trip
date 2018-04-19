@@ -105,15 +105,15 @@ function googleMapGriSliderInitialization() {
             this.disabled = false;
             return;
         }
-        var params = jQuery.param({grid: this.value});
         var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
+        var params = jQuery.param({cityId: city.id, grid: this.value});
         var slider = this;
-        $.put("/boundingboxes/grid?" + params, JSON.stringify(city.boundingBox), function (boundingBoxes) {
+        $.get("http://localhost:8080" + "/boundingboxes/grid?" + params, function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
                 griBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
             });
             slider.disabled = false;
-        }, function () {
+        }).fail(function () {
             console.error("Heat-map grid service temporary unavailable...");
             alert("Heat-map grid service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
             slider.disabled = false;
@@ -157,17 +157,20 @@ function googleMapValidateButtonInitialization() {
             return;
         }
         var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
-        var params = jQuery.param({cityId: city.id});
-        $.get("http://localhost:8080" + "/boundingboxes/fail?" + params, function (boundingBoxes) {
+        var categories = $("#google-map-venue-category").val();
+        var source = $("#google-map-venue-source").val();
+        var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
+
+        $.get("http://localhost:8080" + "/boundingboxes/invalid?" + params, function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
                 failCityBoundingBoxes.push(googleRectangle(boundingBox, 'red'))
             })
         });
-        // $.get("http://localhost:8080" + "/boundingboxes/success?" + params, function (boundingBoxes) {
-        //     boundingBoxes.forEach(function (boundingBox) {
-        //         succCityBoundingBoxes.push(googleRectangle(boundingBox, 'green'))
-        //     })
-        // });
+        $.get("http://localhost:8080" + "/boundingboxes/valid?" + params, function (boundingBoxes) {
+            boundingBoxes.forEach(function (boundingBox) {
+                succCityBoundingBoxes.push(googleRectangle(boundingBox, 'green'))
+            })
+        });
     })
 }
 
@@ -181,7 +184,7 @@ function googleMapShowVenuesButtonInitialization() {
         var source = $("#google-map-venue-source").val();
         var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
 
-        $.put("/venue/city/mine?" + params, undefined, function (_venues) {
+        $.put("/venues/quad/tree/collect?" + params, undefined, function (_venues) {
             _venues.forEach(function (venue) {
                 venueMarkers.push(googleMarker(venue));
             });
@@ -201,9 +204,9 @@ function googleMapBuildHeatMapButtonInitialization() {
         }
         var heatMapOptions = {
             "radius": 0.02,
-            "maxOpacity": 0.7,
+            "maxOpacity": 0.8,
             "scaleRadius": true,
-            "useLocalExtrema": true,
+            "useLocalExtrema": false,
             latField: 'latitude',
             lngField: 'longitude',
             valueField: 'count'

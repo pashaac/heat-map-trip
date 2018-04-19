@@ -9,7 +9,6 @@ import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.client.FoursquareClient;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.FoursquareConfigurationProperties;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
@@ -39,27 +38,28 @@ public class FoursquareService implements VenueMiner {
     @Override
     public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            if (StringUtils.isEmpty(boundingBox.getSearchKey())) {
-                log.warn("Empty categories array is incorrect");
+            if (StringUtils.isEmpty(boundingBox.getCategories())) {
+                log.warn("Empty categories array is incorrect, skip it");
                 return Collections.emptyList();
             }
-            List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, boundingBox.getSearchKey());
-            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), boundingBox.getSearchKey());
-            Map<String, Set<String>> venueToCategories = new HashMap<>();
+            String foursquareApiCategories = categoryService.foursquareApiCategories(boundingBox.getCategories());
+            List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, foursquareApiCategories);
+            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), boundingBox.getCategories());
+            Map<String, Set<String>> venueTypes = new HashMap<>();
             return compactVenues.stream()
                     .map(venue -> {
                         Venue fVenue = new Venue();
                         fVenue.setTitle(VenueUtils.quotation(venue.getName()));
                         fVenue.setLocation(new Marker(venue.getLocation().getLat(), venue.getLocation().getLng()));
-                        fVenue.setSource(Source.FOURSQUARE);
                         fVenue.setRating(venue.getStats().getCheckinsCount());
-                        fVenue.setAddress(String.format("%s, %s, %s", venue.getLocation().getCountry(), venue.getLocation().getCity(), venue.getLocation().getAddress()));
+                        String address = String.format("%s, %s, %s", venue.getLocation().getCountry(), venue.getLocation().getCity(), venue.getLocation().getAddress());
                         fVenue.setDescription(String.format("Contact info:\n"
                                         + "\t - Phone: %s\n"
                                         + "\t - E-mail: %s\n"
                                         + "\t - Twitter: %s\n"
                                         + "\t - Facebook: %s\n"
                                         + "\t - Id: %s\n"
+                                        + "\t - Address: %s\n"
                                         + "URL: %s\n"
                                         + "Statistic info:\n"
                                         + "\t - Rating: %s\n"
@@ -67,26 +67,29 @@ public class FoursquareService implements VenueMiner {
                                         + "\t - Users: %s\n"
                                         + "\t - Tip: %s\n",
                                 venue.getContact().getFormattedPhone(), venue.getContact().getEmail(), venue.getContact().getTwitter(),
-                                venue.getContact().getFacebook(), venue.getId(), venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
+                                venue.getContact().getFacebook(), venue.getId(), address, venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
                                 venue.getStats().getUsersCount(), venue.getStats().getTipCount()));
 
-                        for (Category category : venue.getCategories()) {
-                            if (category == null) {
-                                continue;
+                        List<String> validTypes = Arrays.stream(venue.getCategories())
+                                .filter(Objects::nonNull)
+                                .map(Category::getId)
+                                .filter(foursquareApiCategories::contains)
+                                .collect(Collectors.toList());
+
+
+                        for (String validType : validTypes) {
+                            categoryService.valueOfByFoursquareKey(validType).ifPresent(category -> {
+                                venueTypes.putIfAbsent(fVenue.getTitle(), new HashSet<>());
+                                Set<String> types = venueTypes.get(fVenue.getTitle());
+                                if (!types.contains(validType)) {
+                                    types.add(validType);
+                                    fVenue.setCategory(category.getTitle());
+                                    fVenue.setType(validType);
+                                }
+                            });
+                            if (!StringUtils.isEmpty(fVenue.getType())) {
+                                break;
                             }
-                            if (!boundingBox.getSearchKey().contains(category.getId())) {
-                                continue;
-                            }
-                            Set<String> categories = venueToCategories.computeIfAbsent(fVenue.getTitle(), key -> new HashSet<>());
-                            if (categories.contains(category.getId())) {
-                                continue;
-                            }
-                            categoryService.valueOfByFoursquareKey(category.getId())
-                                    .ifPresent(fCategory -> {
-                                        fVenue.setCategory(fCategory.getTitle());
-                                        fVenue.setSourceCategory(category.getId());
-                                        categories.add(category.getId());
-                                    });
                         }
 
                         fVenue.setBoundingBox(boundingBox);

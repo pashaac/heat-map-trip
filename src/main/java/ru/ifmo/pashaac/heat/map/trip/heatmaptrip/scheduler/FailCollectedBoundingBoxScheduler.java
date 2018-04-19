@@ -25,15 +25,15 @@ public class FailCollectedBoundingBoxScheduler {
     }
 
     @Scheduled(fixedRate = 1000 * 60 * 10)
-    public void reportCurrentTime() {
+    public void schedulerInvalidBoundingBoxes() {
         log.info("Scheduler wake up!");
-        List<BoundingBox> failBoundingBoxes = boundingBoxService.getFailBoundingBoxes();
-        if (CollectionUtils.isEmpty(failBoundingBoxes)) {
-            log.info("No fail bounding boxes :) do nothing");
+        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getInvalidBoundingBoxes();
+        if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
+            log.info("No invalid bounding boxes :) do nothing");
             return;
         }
-        failBoundingBoxes.stream()
+        invalidBoundingBoxes.stream()
                 .peek(boundingBox -> log.info("Try mine data for boundingBox with id = {} from city = {}", boundingBox.getId(), boundingBox.getCity().getCity()))
-                .forEach(System.out::println/*venueService::dirtyVenuesQuadTreeMine*/);
+                .forEach(venueService::dirtyVenuesQuadTreeMine);
     }
 }
