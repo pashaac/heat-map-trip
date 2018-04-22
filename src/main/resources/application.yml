@@ -28,6 +28,7 @@ foursquare:
 # = Google: https://developers.google.com/places/supported_types
 # ===============================
 venue:
+  lower-rating-bound: 0.1 # <- this part from average rating by category
   categories:
     -
       title: Art
@@ -47,6 +48,21 @@ venue:
 #        - 52e81612bcbc57f1066b79ed # Outdoor Sculpture todo
 #        - 52e81612bcbc57f1066b7a32 # Cultural Center todo
         - 50aaa49e4b90af0d42d5de11 # Castle
+        - 4deefb944765f83613cdba6e # Historic Site
+    -
+      title: Catering
+      google-keys:
+        - bakery
+    #   - bar           # todo
+        - cafe
+    #   - meal_takeaway # todo
+        - restaurant
+      foursquare-keys:
+    # - 4bf58dd8d48988d1c4941735 # Restaurant
+      - 5293a7563cf9994f4e043a44 # Russian Restaurant
+    # - 4bf58dd8d48988d1c1941735 # Mexican Restaurant
+    # - 4bf58dd8d48988d110941735 # Italian Restaurant
+    # - 4bf58dd8d48988d10c941735 # French Restaurant
     -
       title: Nature
       google-keys:
@@ -59,31 +75,19 @@ venue:
         - 52e81612bcbc57f1066b7a21 # National Park
         - 56aa371be4b08b9a8d573560 # Waterfall
     -
-      title: Entertainment
-      google-keys:
-        - amusement_park
-        - aquarium
-        - casino
-        - department_store
-        - night_club    # todo
-      foursquare-keys:
-        - 4bf58dd8d48988d182941735 # Theme Park
-        - 5109983191d435c0d71c2bb1 # Theme Park Ride / Attraction
-        - 4bf58dd8d48988d193941735 # Water Park
-    -
-      title: Catering
-      google-keys:
-        - bakery
-        - bar           # todo
-        - cafe
-        - meal_takeaway # todo
-        - restaurant
-      foursquare-keys:
-#        - 4bf58dd8d48988d1c4941735 # Restaurant
-        - 5293a7563cf9994f4e043a44 # Russian Restaurant
-#        - 4bf58dd8d48988d1c1941735 # Mexican Restaurant
-#        - 4bf58dd8d48988d110941735 # Italian Restaurant
-#        - 4bf58dd8d48988d10c941735 # French Restaurant
+     title: Municipality
+     google-keys:
+       - city_hall
+       - library
+       - local_government_office
+       - train_station
+     foursquare-keys:
+       - 4bf58dd8d48988d12f941735 # Library
+       - 52e81612bcbc57f1066b7a38 # Town Hall
+       - 4bf58dd8d48988d12d941735 # Monument / Landmark
+       - 4bf58dd8d48988d126941735 # Government Building
+       - 4bf58dd8d48988d12a941735 # Capitol Building
+       - 4bf58dd8d48988d1df941735 # Bridge
     -
       title: Shrine
       google-keys:
@@ -99,20 +103,6 @@ venue:
         - 4eb1d80a4b900d56c88a45ff # Shrine
         - 4bf58dd8d48988d139941735 # Synagogue
         - 52e81612bcbc57f1066b7a40 # Monastery
-    -
-      title: Municipality
-      google-keys:
-        - city_hall
-        - library
-        - local_government_office
-        - train_station
-      foursquare-keys:
-        - 4bf58dd8d48988d12f941735 # Library
-        - 52e81612bcbc57f1066b7a38 # Town Hall
-        - 4bf58dd8d48988d12d941735 # Monument / Landmark
-        - 4bf58dd8d48988d126941735 # Government Building
-        - 4bf58dd8d48988d12a941735 # Capitol Building
-        - 4bf58dd8d48988d1df941735 # Bridge
 
 
 # ===============================

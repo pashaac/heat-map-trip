@@ -25,12 +25,7 @@ public class GeolocationService {
     private static final List<AddressComponentType> CITY_COMPONENT_TYPES = Arrays.asList(AddressComponentType.LOCALITY, AddressComponentType.POLITICAL);
     private static final List<AddressType> CITY_TYPES = Arrays.asList(AddressType.LOCALITY, AddressType.POLITICAL);
 
-    private static final List<AddressComponentType> CITY_COMPONENT_TYPES_RESERVE = Arrays.asList(AddressComponentType.ADMINISTRATIVE_AREA_LEVEL_2, AddressComponentType.POLITICAL);
-    private static final List<AddressType> CITY_TYPES_RESERVE = Arrays.asList(AddressType.ADMINISTRATIVE_AREA_LEVEL_2, AddressType.POLITICAL);
-
-
     private static final List<AddressComponentType> COUNTRY_COMPONENT_TYPES = Arrays.asList(AddressComponentType.COUNTRY, AddressComponentType.POLITICAL);
-    private static final List<AddressType> COUNTRY_TYPES = Arrays.asList(AddressType.COUNTRY, AddressType.POLITICAL);
 
     private final GoogleService googleService;
     private final CityRepository cityRepository;
@@ -54,14 +49,9 @@ public class GeolocationService {
                 .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES))
                 .flatMap(geocodingResult -> Arrays.stream(geocodingResult.addressComponents))
                 .filter(addressComponent -> Arrays.asList(addressComponent.types).containsAll(CITY_COMPONENT_TYPES))
-                .findFirst().orElseGet(() -> Arrays.stream(geocodingResults)
-                        .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES_RESERVE))
-                        .flatMap(geocodingResult -> Arrays.stream(geocodingResult.addressComponents))
-                        .filter(addressComponent -> Arrays.asList(addressComponent.types).containsAll(CITY_COMPONENT_TYPES_RESERVE))
-                        .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine city geolocation")));
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine city geolocation"));
 
         AddressComponent country = Arrays.stream(geocodingResults)
-                .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(COUNTRY_TYPES))
                 .flatMap(geocodingResult -> Arrays.stream(geocodingResult.addressComponents))
                 .filter(addressComponent -> Arrays.asList(addressComponent.types).containsAll(COUNTRY_COMPONENT_TYPES))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine country geolocation"));
@@ -75,10 +65,7 @@ public class GeolocationService {
         Bounds box = Arrays.stream(geocodingResults)
                 .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES))
                 .map(geocodingResult -> geocodingResult.geometry.bounds)
-                .findFirst().orElseGet(() -> Arrays.stream(geocodingResults)
-                        .filter(geocodingResult -> Arrays.asList(geocodingResult.types).containsAll(CITY_TYPES_RESERVE))
-                        .map(geocodingResult -> geocodingResult.geometry.bounds)
-                        .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine boundingBox area")));
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not determine boundingBox area"));
 
         BoundingBox boundingBox = new BoundingBox(new Marker(box.southwest.lat, box.southwest.lng), new Marker(box.northeast.lat, box.northeast.lng));
         savedCity = cityRepository.saveAndFlush(new City(city.longName, country.longName, boundingBox));

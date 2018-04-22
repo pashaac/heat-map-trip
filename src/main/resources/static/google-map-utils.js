@@ -24,6 +24,10 @@ function clearFailCityBoundingBoxes() {
         boundingBox.setMap(null);
     });
     failCityBoundingBoxes = [];
+    failCityBoundingBoxesX.forEach(function (polyline) {
+       polyline.setMap(null);
+    });
+    failCityBoundingBoxesX = [];
 }
 
 function clearSuccCityBoundingBoxes() {
@@ -54,6 +58,35 @@ var googleRectangle = function (boundingBox, color) {
             west: boundingBox.southWest.longitude
         }
     });
+};
+
+var googleRectangleX = function (boundingBox, color) {
+    var oneLine = new google.maps.Polyline({
+        path: [
+            {lat: boundingBox.southWest.latitude, lng: boundingBox.southWest.longitude},
+            {lat: boundingBox.northEast.latitude, lng: boundingBox.northEast.longitude},
+        ],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 1,
+        strokeWeight: 2 ,
+        fillOpacity: 0.05,
+        map: MAP_GOOGLE
+    });
+
+    var twoLine = new google.maps.Polyline({
+        path: [
+            {lat: boundingBox.southWest.latitude, lng: boundingBox.northEast.longitude},
+            {lat: boundingBox.northEast.latitude, lng: boundingBox.southWest.longitude},
+        ],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 1,
+        strokeWeight: 2 ,
+        fillOpacity: 0.05,
+        map: MAP_GOOGLE
+    });
+    return [oneLine, twoLine];
 };
 
 var googleMarker = function (venue) {

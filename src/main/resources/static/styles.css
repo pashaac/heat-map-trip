@@ -9,16 +9,19 @@ html, body {
     height: 100%;
 }
 
-paper-input-container-input {
-    font-size: 30px;
-}
-
 #google-map-city-search-box {
     position: absolute;
     top: 0;
     left: 125px;
     min-width: 250px;
     z-index: 1;
+
+    --paper-input-container-color: black;
+    --paper-input-container-focus-color: blue;
+    --paper-input-container-input-color: black;
+    --paper-input-container-input: {
+        font-weight: bold;
+    };
 }
 
 #google-map-venue-source {
@@ -27,11 +30,14 @@ paper-input-container-input {
     left: 400px;
     max-width: 175px;
     z-index: 1;
+
+    --paper-input-container-color: black;
+    --paper-input-container-focus-color: blue;
+    --paper-input-container-input-color: black;
+    --paper-input-container-input: {
+        font-weight: bold;
+    };
 }
-
-
-
-
 
 #google-map-venue-category {
     position: absolute;
@@ -39,52 +45,67 @@ paper-input-container-input {
     left: 600px;
     max-width: 250px;
     z-index: 1;
+
+    --paper-input-container-color: black;
+    --paper-input-container-focus-color: blue;
+    --paper-input-container-input-color: black;
+    --paper-input-container-input: {
+        font-weight: bold;
+    };
 }
 
-#google-map-city-grid-slider {
+#google-map-grid-slider-card {
     position: absolute;
-    top: 14px;
-    min-width: 275px;
-    left: 850px;
+    background: white;
+    font-family: sans-serif;
+    padding-right: 12px;
+    top: 140px;
+    left: 10px;
     z-index: 1;
+}
+
+#google-map-grid-slider-text {
+    padding-top: 10px;
+    padding-left: 7px;
+    font-size: small;
+}
+
+#google-map-heat-map-grid-slider-card {
+    position: absolute;
+    background: white;
+    font-family: sans-serif;
+    padding-right: 12px;
+    top: 235px;
+    left: 10px;
+    z-index: 1;
+}
+
+#google-map-heat-map-slider-text {
+    padding-top: 10px;
+    padding-left: 7px;
+    font-size: small;
 }
 
 #map-clear-button {
+    background: white;
+    width: 94px;
+    text-transform: none;
     position: absolute;
     font-family: sans-serif;
-    top: 55px;
-    left: 5px;
-    z-index: 1;
-}
-
-#map-validate-button {
-    position: absolute;
-    font-family: sans-serif;
-    top: 105px;
+    font-size: small;
+    top: 50px;
     left: 5px;
     z-index: 1;
 }
 
 #map-show-venues-button {
+    background: white;
+    width: 94px;
     position: absolute;
     font-family: sans-serif;
-    top: 155px;
-    left: 5px;
-    z-index: 1;
-}
-
-#map-show-venues-spinner {
-    position: absolute;
-    font-family: sans-serif;
-    top: 155px;
-    left: 105px;
-    z-index: 1;
-}
-
-#map-build-heat-map-button {
-    position: absolute;
-    font-family: sans-serif;
-    top: 205px;
+    font-size: small;
+    text-transform: none;
+    top: 95px;
     left: 5px;
     z-index: 1;
 }

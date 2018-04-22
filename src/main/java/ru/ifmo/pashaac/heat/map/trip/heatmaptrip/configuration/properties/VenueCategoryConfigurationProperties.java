@@ -21,5 +21,6 @@ import java.util.List;
 public class VenueCategoryConfigurationProperties {
 
     private List<Category> categories;
+    private Double lowerRatingBound;
 
 }

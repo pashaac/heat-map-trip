@@ -25,6 +25,7 @@
     <link rel="import" href="bower_components/paper-dropdown/paper-dropdown.html">
     <link rel="import" href="bower_components/paper-slider/paper-slider.html">
     <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
+    <link rel="import" href="bower_components/paper-card/paper-card.html">
     <link rel="import" href="bower_components/iron-icon/iron-icon.html">
     <link rel="import" href="bower_components/neon-animation/web-animations.html">
     <link rel="import" href="bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
@@ -54,15 +55,18 @@
     </template>
 </dom-bind>
 
-<paper-slider id="google-map-city-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="32"
-              max-markers="32" step="1" value="0"></paper-slider>
-
-<paper-button id="map-clear-button" raised>clear</paper-button>
-<paper-button id="map-validate-button" raised>validate</paper-button>
-<paper-button id="map-show-venues-button" raised>Show venues</paper-button>
-<paper-button id="map-build-heat-map-button" raised>Build Heat Map</paper-button>
-<!--<paper-spinner id="map-show-venues-spinner"></paper-spinner>-->
-
+<paper-card id="google-map-grid-slider-card">
+    <div id="google-map-grid-slider-text">Grid density (1x1, 2x2, ...)</div>
+    <paper-slider id="google-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
+                      max="40" max-markers="41" step="1" value="0"></paper-slider>
+</paper-card>
+<paper-card id="google-map-heat-map-grid-slider-card">
+    <div id="google-map-heat-map-slider-text">Heat map intensity / coverage</div>
+    <paper-slider id="google-map-heat-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
+              max="30" max-markers="31" step="1" value="0" disabled></paper-slider>
+</paper-card>
+<paper-button id="map-clear-button" raised>Clean Map</paper-button>
+<paper-button id="map-show-venues-button" raised>Show Places</paper-button>
 
 
 <script>
@@ -70,12 +74,11 @@
     googleMapSearchBoxInitialization();
     googleMapVenueSourceInitialization();
     googleMapCategoriesInitialization();
-    googleMapGriSliderInitialization();
+    googleMapGridSliderInitialization();
+    googleMapHeatMapSliderInitialization();
 
     googleMapClearInitialization();
-    googleMapValidateButtonInitialization();
     googleMapShowVenuesButtonInitialization();
-    googleMapBuildHeatMapButtonInitialization();
 
     geolocationReverseBrowser();
 </script>

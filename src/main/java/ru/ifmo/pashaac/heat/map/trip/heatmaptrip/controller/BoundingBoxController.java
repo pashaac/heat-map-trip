@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 
 import java.util.List;
 
@@ -18,10 +20,12 @@ import java.util.List;
 public class BoundingBoxController {
 
     private final BoundingBoxService boundingBoxService;
+    private final VenueService venueService;
 
     @Autowired
-    public BoundingBoxController(BoundingBoxService boundingBoxService) {
+    public BoundingBoxController(BoundingBoxService boundingBoxService, VenueService venueService) {
         this.boundingBoxService = boundingBoxService;
+        this.venueService = venueService;
     }
 
     @RequestMapping(value = "/invalid", method = RequestMethod.GET)
@@ -39,7 +43,7 @@ public class BoundingBoxController {
     }
 
     @RequestMapping(value = "/grid", method = RequestMethod.GET)
-    @ApiOperation(value = "Create grid for boundingBox  area")
+    @ApiOperation(value = "Create grid for boundingBox area")
     public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
                                              @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid) {
         if (grid < 1) {
@@ -47,4 +51,11 @@ public class BoundingBoxController {
         }
         return boundingBoxService.gridBoundingBox(cityId, grid);
     }
+
+    @RequestMapping(path = "/mine/repeat", method = RequestMethod.PUT)
+    public List<Venue> repeatMineBoundingBoxVenues(@RequestParam @ApiParam(value = "BoundingBox id of the search", required = true) Long boundingBoxId) {
+        return venueService.dirtyVenuesQuadTreeMine(boundingBoxService.clearBoundingBoxVenues(boundingBoxId));
+    }
+
+
 }

@@ -10,6 +10,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,6 +47,13 @@ public class BoundingBoxService {
         return boundingBoxMap.entrySet().stream()
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
+    }
+
+    public BoundingBox clearBoundingBoxVenues(Long boundingBoxId) {
+        BoundingBox boundingBox = boundingBoxRepository.findOne(boundingBoxId);
+        boundingBox.setValid(false);
+        boundingBox.setVenues(Collections.emptyList());
+        return boundingBoxRepository.save(boundingBox);
     }
 
     public List<BoundingBox> getValidBoundingBoxes(Long cityId, Source source, String category) {

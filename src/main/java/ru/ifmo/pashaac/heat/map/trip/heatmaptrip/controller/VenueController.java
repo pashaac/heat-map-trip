@@ -39,16 +39,15 @@ public class VenueController {
     public List<Venue> getValidVenues(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
                                       @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                       @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        List<Venue> dirtyVenues = venueService.quadTreeMineIfNeeded(cityId, source, categories);
+        return venueService.venueValidation(dirtyVenues, categories);
+    }
+
+    @RequestMapping(path = "/quad/tree/collect/dirty", method = RequestMethod.PUT)
+    public List<Venue> getDirtyVenues(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
+                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
         return venueService.quadTreeMineIfNeeded(cityId, source, categories);
     }
 
-//    @RequestMapping(value = "/venues/report", method = RequestMethod.GET)
-//    @ApiOperation(value = "Generate Excel report for the city")
-//    public String download(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
-//                           @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
-//                           @RequestParam /*@ApiParam(value = "Venues category list", required = true, allowableValues = "Art, Nature, Entertainment, Catering, Shrine, Municipality") */List<String> categories,
-//                           Model model) {
-//        model.addAttribute("venues", venueService.quadTreeMineIfNeeded(cityId, source, categories));
-//        return "";
-//    }
 }

@@ -24,9 +24,9 @@ public class FailCollectedBoundingBoxScheduler {
         this.venueService = venueService;
     }
 
-    @Scheduled(fixedRate = 1000 * 60 * 10)
+    @Scheduled(fixedRate = 1000 * 60 * 10) // TODO uncomment before production
     public void schedulerInvalidBoundingBoxes() {
-        log.info("Scheduler wake up!");
+        log.info("Scheduler wake up to check unhandled or fail bounding boxes...");
         List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getInvalidBoundingBoxes();
         if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
             log.info("No invalid bounding boxes :) do nothing");
