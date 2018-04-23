@@ -75,6 +75,9 @@ dependencies {
 	// QA
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 
+	// Apache Math
+	compile('org.apache.commons:commons-math3:3.6.1')
+
 	// Excel report / Useless feature
 //	compile('org.apache.poi:poi:3.17')
 //	compile('org.apache.poi:poi-ooxml:3.17')

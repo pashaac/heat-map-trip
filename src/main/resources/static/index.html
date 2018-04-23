@@ -56,12 +56,14 @@
 </dom-bind>
 
 <paper-card id="google-map-grid-slider-card">
-    <div id="google-map-grid-slider-text">Grid density (1x1, 2x2, ...)</div>
+    <div id="google-map-grid-slider-text">Grid density ^ 2
+        <paper-button id="google-map-grid-heat-map-button">Grid-Heat-Map</paper-button>
+    </div>
     <paper-slider id="google-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
                       max="40" max-markers="41" step="1" value="0"></paper-slider>
 </paper-card>
 <paper-card id="google-map-heat-map-grid-slider-card">
-    <div id="google-map-heat-map-slider-text">Heat map intensity / coverage</div>
+    <div id="google-map-heat-map-slider-text">Real-Heat-Map (slider for intensity)</div>
     <paper-slider id="google-map-heat-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
               max="30" max-markers="31" step="1" value="0" disabled></paper-slider>
 </paper-card>
@@ -78,6 +80,7 @@
 
     googleMapClearInitialization();
     googleMapShowVenuesButtonInitialization();
+    googleMapGridHeatMapInitialization();
 
     geolocationReverseBrowser();
 </script>

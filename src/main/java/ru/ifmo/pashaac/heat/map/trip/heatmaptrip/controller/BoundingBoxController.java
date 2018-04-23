@@ -43,7 +43,7 @@ public class BoundingBoxController {
     }
 
     @RequestMapping(value = "/grid", method = RequestMethod.GET)
-    @ApiOperation(value = "Create grid for boundingBox area")
+    @ApiOperation(value = "Create grid for the city area")
     public List<BoundingBox> gridBoundingBox(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
                                              @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid) {
         if (grid < 1) {
@@ -52,7 +52,22 @@ public class BoundingBoxController {
         return boundingBoxService.gridBoundingBox(cityId, grid);
     }
 
-    @RequestMapping(path = "/mine/repeat", method = RequestMethod.PUT)
+    @RequestMapping(value = "/grid/heat/map", method = RequestMethod.GET)
+    @ApiOperation(value = "Create grid heat-map for the city area")
+    public List<String> gridHeatMap(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                    @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) int grid,
+                                    @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                    @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        if (grid < 1) {
+            throw new IllegalArgumentException("Grid cells count in row or column should be more then zero");
+        }
+
+        List<Venue> dirtyVenues = venueService.quadTreeMineIfNeeded(cityId, source, categories);
+        List<Venue> venues = venueService.venueValidation(dirtyVenues, categories);
+        return boundingBoxService.gridHeatMap(venues, cityId, grid);
+    }
+
+    @RequestMapping(path = "failed/mine/repeat", method = RequestMethod.PUT)
     public List<Venue> repeatMineBoundingBoxVenues(@RequestParam @ApiParam(value = "BoundingBox id of the search", required = true) Long boundingBoxId) {
         return venueService.dirtyVenuesQuadTreeMine(boundingBoxService.clearBoundingBoxVenues(boundingBoxId));
     }

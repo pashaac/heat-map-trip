@@ -88,6 +88,10 @@ public class VenueService {
             log.info("Bounding box with empty search key, skip it");
             return Collections.emptyList();
         }
+        if (rootBoundingBox.isValid()) {
+            log.info("Bounding box is valid, skip it");
+            return Collections.emptyList();
+        }
 
         long startTime = System.currentTimeMillis();
 

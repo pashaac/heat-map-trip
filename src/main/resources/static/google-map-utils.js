@@ -19,6 +19,13 @@ function clearGridBoundingBoxes() {
     griBoundingBoxes = [];
 }
 
+function clearGridBoundingBoxesColored() {
+    griBoundingBoxesColored.forEach(function (boundingBox) {
+        boundingBox.setMap(null);
+    });
+    griBoundingBoxesColored = [];
+}
+
 function clearFailCityBoundingBoxes() {
     failCityBoundingBoxes.forEach(function (boundingBox) {
         boundingBox.setMap(null);
@@ -57,6 +64,16 @@ var googleRectangle = function (boundingBox, color) {
             east: boundingBox.northEast.longitude,
             west: boundingBox.southWest.longitude
         }
+    });
+};
+
+var googleRectangleColored = function (boundingBox, color) {
+    return new google.maps.Rectangle({
+        strokeWeight: 0,
+        fillOpacity: 0.9,
+        fillColor: color,
+        map: MAP_GOOGLE,
+        bounds: boundingBox.bounds
     });
 };
 
