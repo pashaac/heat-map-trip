@@ -12,44 +12,6 @@ jQuery.each(["put", "delete"], function (i, method) {
     };
 });
 
-function clearGridBoundingBoxes() {
-    griBoundingBoxes.forEach(function (boundingBox) {
-        boundingBox.setMap(null);
-    });
-    griBoundingBoxes = [];
-}
-
-function clearGridBoundingBoxesColored() {
-    griBoundingBoxesColored.forEach(function (boundingBox) {
-        boundingBox.setMap(null);
-    });
-    griBoundingBoxesColored = [];
-}
-
-function clearFailCityBoundingBoxes() {
-    failCityBoundingBoxes.forEach(function (boundingBox) {
-        boundingBox.setMap(null);
-    });
-    failCityBoundingBoxes = [];
-    failCityBoundingBoxesX.forEach(function (polyline) {
-       polyline.setMap(null);
-    });
-    failCityBoundingBoxesX = [];
-}
-
-function clearSuccCityBoundingBoxes() {
-    succCityBoundingBoxes.forEach(function (boundingBox) {
-        boundingBox.setMap(null);
-    });
-    succCityBoundingBoxes = [];
-}
-
-function clearVenueMarkers() {
-    venueMarkers.forEach(function (marker) {
-        marker.setMap(null);
-    });
-    venueMarkers = [];
-}
 
 var googleRectangle = function (boundingBox, color) {
     return new google.maps.Rectangle({

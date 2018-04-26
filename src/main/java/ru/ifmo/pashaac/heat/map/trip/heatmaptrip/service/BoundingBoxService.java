@@ -3,6 +3,8 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
@@ -12,8 +14,10 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -30,37 +34,39 @@ public class BoundingBoxService {
         this.cityRepository = cityRepository;
     }
 
-    public List<BoundingBox> getInvalidBoundingBoxes(Long cityId, Source source, List<String> categories) {
-        Map<Long, BoundingBox> boundingBoxMap = categories.stream()
-                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsFalseAndSourceAndCategoriesContains(cityId, source, category).stream())
-                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox));
-        return boundingBoxMap.entrySet().stream()
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+    public BoundingBox getBoundingBox(Long boundingBoxId) {
+        return boundingBoxRepository.findOne(boundingBoxId);
     }
 
-    public List<BoundingBox> getInvalidBoundingBoxes() {
+    public List<BoundingBox> getTotalInvalidBoundingBoxes() {
         return boundingBoxRepository.findBoundingBoxesByValidIsFalse();
     }
 
-    public List<BoundingBox> getValidBoundingBoxes(Long cityId, Source source, List<String> categories) {
+    public List<BoundingBox> getValidBasedBoundingBoxes(Long cityId, Source source, List<String> categories, boolean valid) {
         Map<Long, BoundingBox> boundingBoxMap = categories.stream()
-                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsTrueAndSourceAndCategoriesContains(cityId, source, category).stream())
+                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndSourceAndCategoriesContainsAndValid(cityId, source, category, valid).stream())
                 .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox));
         return boundingBoxMap.entrySet().stream()
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
     }
 
-    public BoundingBox clearBoundingBoxVenues(Long boundingBoxId) {
-        BoundingBox boundingBox = boundingBoxRepository.findOne(boundingBoxId);
-        boundingBox.setValid(false);
-        boundingBox.setVenues(Collections.emptyList());
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BoundingBox save(BoundingBox boundingBox) {
         return boundingBoxRepository.save(boundingBox);
     }
 
-    public List<BoundingBox> getValidBoundingBoxes(Long cityId, Source source, String category) {
-        return boundingBoxRepository.findBoundingBoxesByCity_IdAndValidIsTrueAndSourceAndCategoriesContains(cityId, source, category);
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<BoundingBox> splitBoundingBox(BoundingBox boundingBox) {
+        boundingBoxRepository.delete(boundingBox);
+        return boundingBoxRepository.save(GeoEarthMathUtils.getQuarters(boundingBox));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BoundingBox saveBoundingBoxWithVenues(BoundingBox boundingBox, List<Venue> venues) {
+        boundingBox.setValid(true);
+        boundingBox.setVenues(venues);
+        return boundingBoxRepository.save(boundingBox);
     }
 
     public List<BoundingBox> gridBoundingBox(Long cityId, int grid) {
@@ -112,8 +118,7 @@ public class BoundingBoxService {
 //                .collect(Collectors.toList());
     }
 
-    public List<String> gridHeatMap(List<Venue> venues, long cityId, int grid) {
-        List<BoundingBox> boundingBoxes = gridBoundingBox(cityId, grid);
+    public List<String> gridHeatMap(List<Venue> venues, List<BoundingBox> boundingBoxes, int grid) {
         double[] boundingBoxRatings = new double[boundingBoxes.size()];
         for (Venue venue : venues) {
             int vX = 0;
@@ -173,4 +178,5 @@ public class BoundingBoxService {
                 })
                 .collect(Collectors.toList());
     }
+
 }

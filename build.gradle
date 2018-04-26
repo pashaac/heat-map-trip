@@ -63,6 +63,9 @@ dependencies {
 	// Geo Earth calculator
 	compile files('src/main/resources/libs/geocalc/geocalc-0.5.1.jar')
 
+	// DBSCAN
+	compile files('src/main/resources/libs/dbscan/dbscan-0.1.jar')
+
 	// PostgreSQL
 	runtime('org.postgresql:postgresql')
 
@@ -75,8 +78,9 @@ dependencies {
 	// QA
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 
-	// Apache Math
+	// Apache Math + Smile
 	compile('org.apache.commons:commons-math3:3.6.1')
+	compile('com.github.haifengl:smile-core:1.5.1')
 
 	// Excel report / Useless feature
 //	compile('org.apache.poi:poi:3.17')

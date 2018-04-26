@@ -7,7 +7,10 @@
     <!-- .js files with business logic -->
     <script type="text/javascript" src="google-map-utils.js"></script>
     <script type="text/javascript" src="google-map.js"></script>
-    <script type="text/javascript" src="geolocation-controller.js"></script>
+    <script type="text/javascript" src="geolocation-interface.js"></script>
+    <script type="text/javascript" src="category-interface.js"></script>
+    <script type="text/javascript" src="boundingBox-interface.js"></script>
+    <script type="text/javascript" src="venue-interface.js"></script>
 
     <!-- google-map import should be before heat-map -->
     <script type="text/javascript" src="bower_components/web-animations-js/web-animations.min.js"></script>
@@ -55,16 +58,16 @@
     </template>
 </dom-bind>
 
-<paper-card id="google-map-grid-slider-card">
+<paper-card id="google-map-grid-card">
     <div id="google-map-grid-slider-text">Grid density ^ 2
         <paper-button id="google-map-grid-heat-map-button">Grid-Heat-Map</paper-button>
     </div>
     <paper-slider id="google-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
-                      max="40" max-markers="41" step="1" value="0"></paper-slider>
+                      max="50" max-markers="51" step="1" value="0"></paper-slider>
 </paper-card>
-<paper-card id="google-map-heat-map-grid-slider-card">
+<paper-card id="google-map-heat-map-card">
     <div id="google-map-heat-map-slider-text">Real-Heat-Map (slider for intensity)</div>
-    <paper-slider id="google-map-heat-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
+    <paper-slider id="google-map-heat-map-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
               max="30" max-markers="31" step="1" value="0" disabled></paper-slider>
 </paper-card>
 <paper-button id="map-clear-button" raised>Clean Map</paper-button>

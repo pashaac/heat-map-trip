@@ -26,10 +26,6 @@ public class GeoEarthMathUtils {
 
     private static Marker median(Marker point1, Marker point2) {
         return measureOut(point1, point2, 0.5);
-//        double bearing = EarthCalc.getBearing(convert(point1), convert(point2));
-//        double distance = distance(point1, point2);
-//        Point median = EarthCalc.pointRadialDistance(convert(point1), bearing, 0.5 * distance);
-//        return new Marker(median.getLatitude(), median.getLongitude());
     }
 
     public static Marker measureOut(Marker point1, Marker point2, double ratio) {
@@ -37,6 +33,11 @@ public class GeoEarthMathUtils {
         double distance = distance(point1, point2);
         Point point = EarthCalc.pointRadialDistance(convert(point1), bearing, ratio * distance);
         return new Marker(point.getLatitude(), point.getLongitude());
+    }
+
+    public static Marker markerOnRadialDistance(Marker point, double bearing, double distance) {
+        Point dstPoint = EarthCalc.pointRadialDistance(convert(point), bearing, distance);
+        return new Marker(dstPoint.getLatitude(), dstPoint.getLongitude());
     }
 
     public static boolean contains(BoundingBox boundingBox, Marker point) {

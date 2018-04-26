@@ -1,22 +1,32 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.ml.clustering.Cluster;
+import org.apache.commons.math3.ml.clustering.DBSCANClusterer;
+import org.christopherfrantz.dbscan.DBSCANClusteringException;
+import org.christopherfrantz.dbscan.DistanceMetric;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.ColorMarker;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.City;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.CityRepository;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.repository.VenueRepository;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
+import smile.clustering.DBScan;
+import smile.math.distance.Distance;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
+import java.util.Queue;
 import java.util.stream.Collectors;
-
-import static ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source.FOURSQUARE;
+import java.util.stream.Stream;
 
 /**
  * Created by Pavel Asadchiy
@@ -32,149 +42,147 @@ public class VenueService {
     private final CityRepository cityRepository;
     private final BoundingBoxService boundingBoxService;
     private final VenueCategoryConfigurationProperties venueCategoryConfigurationProperties;
-    private final VenueTransactionalService venueTransactionalService;
+    private final VenueRepository venueRepository;
 
     @Autowired
-    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, CityRepository cityRepository, BoundingBoxService boundingBoxService, VenueCategoryConfigurationProperties venueCategoryConfigurationProperties, VenueTransactionalService venueTransactionalService) {
+    public VenueService(GoogleService googleService, FoursquareService foursquareService, CategoryService categoryService, CityRepository cityRepository, BoundingBoxService boundingBoxService, VenueCategoryConfigurationProperties venueCategoryConfigurationProperties, VenueRepository venueRepository) {
         this.googleService = googleService;
         this.foursquareService = foursquareService;
         this.categoryService = categoryService;
         this.cityRepository = cityRepository;
         this.boundingBoxService = boundingBoxService;
         this.venueCategoryConfigurationProperties = venueCategoryConfigurationProperties;
-        this.venueTransactionalService = venueTransactionalService;
+        this.venueRepository = venueRepository;
+    }
+
+    public List<Venue> getVenues(List<Long> venueIds) {
+        return venueRepository.findAll(venueIds);
     }
 
     public List<Venue> apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
-        VenueMiner venueMiner;
-        switch (source) {
-            case FOURSQUARE:
-                venueMiner = foursquareService;
-                boundingBox.setSource(FOURSQUARE);
-                boundingBox.setCategories(categoryService.join(categories));
-                break;
-            case GOOGLE:
-                venueMiner = googleService;
-                boundingBox.setSource(Source.GOOGLE);
-                boundingBox.setCategories(categoryService.join(categories));
-                break;
-            default:
-                throw new IllegalArgumentException("Incorrect data source type: " + source);
-        }
-        return venueMiner.apiMine(boundingBox).orElse(Collections.emptyList());
+        boundingBox.setSource(source);
+        boundingBox.setCategories(categoryService.join(categories));
+        return venueMinerIdentifier(source).apiMine(boundingBox).orElse(Collections.emptyList());
     }
 
-    private List<Venue> dirtyVenuesQuadTreeMine(City city, Source source, List<String> categories) {
-        BoundingBox cityBoundingBox = city.getBoundingBox();
+    private VenueMiner venueMinerIdentifier(Source source) {
         switch (source) {
             case FOURSQUARE:
-                cityBoundingBox.setSource(FOURSQUARE);
-                cityBoundingBox.setCategories(categoryService.join(categories));
-                break;
+                return foursquareService;
             case GOOGLE:
-                cityBoundingBox.setSource(Source.GOOGLE);
-                cityBoundingBox.setCategories(categoryService.join(categories));
-                break;
+                return googleService;
             default:
                 throw new IllegalArgumentException("Incorrect data source type: " + source);
         }
-        BoundingBox savedBoundingBox = venueTransactionalService.save(cityBoundingBox);
+    }
+
+    private List<Venue> quadTreeMine(Long cityId, Source source, List<String> categories) {
+        if (Objects.isNull(source)) {
+            log.warn("Null source impossible! Skip it!");
+            return Collections.emptyList();
+        }
+        if (CollectionUtils.isEmpty(categories)) {
+            log.warn("Categories list to collect is empty! Skip it!");
+            return Collections.emptyList();
+        }
+        City city = Optional.ofNullable(cityRepository.findOne(cityId))
+                .orElseThrow(() -> new IllegalArgumentException("No city with id = " + cityId));
+        BoundingBox boundingBox = city.getBoundingBox();
+        boundingBox.setSource(source);
+        boundingBox.setCategories(categoryService.join(categories));
+        BoundingBox savedBoundingBox = boundingBoxService.save(boundingBox);
         log.info("Mining places for city {} by categories {} starting...", city.getCity(), categories);
-        return dirtyVenuesQuadTreeMine(savedBoundingBox);
+        return quadTreeMine(savedBoundingBox);
     }
 
-    public List<Venue> dirtyVenuesQuadTreeMine(BoundingBox rootBoundingBox) {
-        if (StringUtils.isEmpty(rootBoundingBox.getSource())) {
-            log.info("Bounding box with empty search key, skip it");
+    public List<Venue> quadTreeMine(BoundingBox rootBoundingBox) {
+        if (Objects.isNull(rootBoundingBox.getSource())) {
+            log.warn("Bounding box has empty source information! Skip it!");
             return Collections.emptyList();
         }
         if (rootBoundingBox.isValid()) {
-            log.info("Bounding box is valid, skip it");
+            log.warn("Bounding box has valid status flag! Skip it!");
             return Collections.emptyList();
         }
 
         long startTime = System.currentTimeMillis();
-
-        VenueMiner venueMiner;
-        switch (rootBoundingBox.getSource()) {
-            case FOURSQUARE:
-                venueMiner = foursquareService;
-                break;
-            case GOOGLE:
-                venueMiner = googleService;
-                break;
-            default:
-                throw new IllegalArgumentException("Incorrect data source type: " + rootBoundingBox.getSource());
-        }
-
+        VenueMiner venueMiner = venueMinerIdentifier(rootBoundingBox.getSource());
         Queue<BoundingBox> boxQueue = new ArrayDeque<>(Collections.singleton(rootBoundingBox));
         int ind = 0;
         int apiCallCounter = 0;
-        List<Venue> dirtyVenues = new ArrayList<>();
+        List<Venue> venues = new ArrayList<>();
         while (!boxQueue.isEmpty()) {
             log.debug("Trying to get places for boundingBox #{}...", ind++);
             BoundingBox boundingBox = Optional.ofNullable(boxQueue.poll())
                     .orElseThrow(() -> new IllegalArgumentException("Null boundingBox during mining process"));
-            Optional<List<Venue>> minedBboxDirtyVenues = venueMiner.apiMine(boundingBox);
+            Optional<List<Venue>> apiMinedBoundingBoxVenues = venueMiner.apiMine(boundingBox);
             ++apiCallCounter;
-            if (!minedBboxDirtyVenues.isPresent()) {
-                log.warn("API call failed... Search area already saved... Scheduler try repeat search in future...");
+            if (!apiMinedBoundingBoxVenues.isPresent()) {
+                log.warn("API mine call failed... Stop collection process! Scheduler will handle this area later...");
                 continue;
             }
-            if (venueMiner.isReachTheLimit(minedBboxDirtyVenues.get())) {
-                log.debug("Split bounding box, because {} discovered max amount of venues", boundingBox.getSource());
-                List<BoundingBox> quarters = venueTransactionalService.splitBoundingBox(boundingBox);
+            if (venueMiner.isReachTheLimit(apiMinedBoundingBoxVenues.get())) {
+                log.debug("Split bounding box due to {} API client return max amount of venues", boundingBox.getSource());
+                List<BoundingBox> quarters = boundingBoxService.splitBoundingBox(boundingBox);
                 boxQueue.addAll(quarters);
                 continue;
             }
-            List<Venue> bboxDirtyVenues = minedBboxDirtyVenues.get().stream()
+            // Hack to have venues strongly inside bounding box
+            List<Venue> boundingBoxVenues = apiMinedBoundingBoxVenues.get().stream()
                     .filter(venue -> GeoEarthMathUtils.contains(boundingBox, venue.getLocation()))
                     .collect(Collectors.toList());
-            boundingBox.setVenues(bboxDirtyVenues);
-            List<Venue> savedVenues = venueTransactionalService.saveVenueBoundingBox(boundingBox).getVenues();
-            dirtyVenues.addAll(savedVenues);
-            log.info("Was searched: {} {} dirty venues", bboxDirtyVenues.size(), boundingBox.getSource());
+            BoundingBox savedBoundingBox = boundingBoxService.saveBoundingBoxWithVenues(boundingBox, boundingBoxVenues);
+            venues.addAll(savedBoundingBox.getVenues());
+            log.info("Was searched: {} {} venues", boundingBoxVenues.size(), boundingBox.getSource());
         }
         log.info("API called approximately: {} times", apiCallCounter);
-        log.info("Was searched {} dirty venues", dirtyVenues.size());
-        log.info("City area was scanned in {} ms", System.currentTimeMillis() - startTime);
-        return dirtyVenues;
+        log.info("Was searched {} venues", venues.size());
+        log.info("City area was scanned in {} ms to collect venues according to categories: {}", System.currentTimeMillis() - startTime, rootBoundingBox.getCategories());
+        return venues;
     }
-
 
     public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> categories) {
-        List<Venue> dirtyVenues = new ArrayList<>();
-        List<String> notFoundCategories = new ArrayList<>();
+//        TODO: Need try handle invalid boundingBoxes or not?
+//        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getValidBasedBoundingBoxes(cityId, source, categories, false);
+//        if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
+//            log.info("No invalid bounding boxes :) continue");
+//        } else {
+//            log.info("Was found {} invalid bounding boxes... Let's handle its", invalidBoundingBoxes.size());
+//            invalidBoundingBoxes.stream()
+//                    .peek(boundingBox -> log.info("Try mine data for boundingBox with id = {} from city = {}", boundingBox.getId(), boundingBox.getCity().getCity()))
+//                    .forEach(this::quadTreeMine);
+//        }
+
+        List<Venue> venues = new ArrayList<>();
+        List<String> emptyCategories = new ArrayList<>();
         for (String category : categories) {
-            List<BoundingBox> categoryBoundingBoxes = boundingBoxService.getValidBoundingBoxes(cityId, source, category);
-            if (CollectionUtils.isEmpty(categoryBoundingBoxes)) {
-                notFoundCategories.add(category);
+            List<BoundingBox> categoryContainsBoundingBoxes = boundingBoxService.getValidBasedBoundingBoxes(cityId, source, Collections.singletonList(category), true);
+            if (CollectionUtils.isEmpty(categoryContainsBoundingBoxes)) {
+                emptyCategories.add(category);
                 continue;
             }
-            List<Venue> categoryDirtyVenues = categoryBoundingBoxes.stream()
-                    .map(BoundingBox::getVenues)
-                    .flatMap(Collection::stream)
+            List<Venue> categoryVenues = categoryContainsBoundingBoxes.stream()
+                    .flatMap(boundingBox -> boundingBox.getVenues().stream())
                     .filter(venue -> category.equals(venue.getCategory()))
                     .collect(Collectors.toList());
-            dirtyVenues.addAll(categoryDirtyVenues);
+            venues.addAll(categoryVenues);
         }
-        if (CollectionUtils.isEmpty(notFoundCategories)) {
-            return dirtyVenues;
-        }
-        List<Venue> minedDirtyVenues = dirtyVenuesQuadTreeMine(cityRepository.findOne(cityId), source, notFoundCategories);
-        dirtyVenues.addAll(minedDirtyVenues);
-        return dirtyVenues;
+        List<Venue> quadTreeMinedVenues = quadTreeMine(cityId, source, emptyCategories);
+        venues.addAll(quadTreeMinedVenues);
+        return venues;
     }
 
-    public List<Venue> venueValidation(List<Venue> dirtyVenues, List<String> categories) {
+    // TODO: need improvements in this algorithm
+    public List<Venue> venueValidation(List<Venue> dirtyVenues) {
         // TODO: Use special filtering: invalidate all -> filtering -> set valid flag in db -> return
         // Possible remove flag game, but for debug very useful
-        log.info("Plan to filter {} dirty venues from categories = {}", dirtyVenues.size(), categories);
+        Map<String, List<Venue>> categoryGroups = dirtyVenues.stream().collect(Collectors.groupingBy(Venue::getCategory));
+        log.info("Plan validate {} dirty venues from categories = {}", dirtyVenues.size(), categoryService.join(categoryGroups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList())));
         long startTime = System.currentTimeMillis();
         List<Venue> venues = dirtyVenues.stream()
                 .peek(venue -> venue.setValid(false))
                 .collect(Collectors.toList());
-        venues = venueTransactionalService.saveVenues(venues); // invalidate all
+        venues = venueRepository.save(venues); // invalidate all
         venues = venues.stream()
                 .filter(venue -> Objects.nonNull(venue.getCategory()))
                 .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
@@ -189,8 +197,9 @@ public class VenueService {
                                 * venueCategoryConfigurationProperties.getLowerRatingBound()))
                 .peek(venue -> venue.setValid(true))
                 .collect(Collectors.toList());
-        venues = venueTransactionalService.saveVenues(venues); // true valid flag for filtered venues
-        log.info("After filtering become {} venues from categories = {}, filtering time = {} ms", venues.size(), categories, (System.currentTimeMillis() - startTime));
+        venues = venueRepository.save(venues); // true valid flag for filtered venues
+        log.info("After filtering become {} venues from categories = {}, filtering time = {} ms", venues.size(),
+                categoryService.join(categoryGroups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList())), (System.currentTimeMillis() - startTime));
 
         double minRatingValue = venues.stream().mapToDouble(Venue::getRating).min().orElse(0.0);
         double maxRatingValue = venues.stream().mapToDouble(Venue::getRating).max().orElse(0.0);
@@ -198,4 +207,113 @@ public class VenueService {
         venues.forEach(venue -> venue.setRating(Math.pow(venue.getRating(), 1.0 / Math.log10(maxRatingValue))));
         return venues;
     }
+
+    // TODO: need improve this algorithm and inject properties
+    public List<Marker> calculateVenuesDistribution(List<Venue> venues) {
+        long startTime = System.currentTimeMillis();
+        List<Marker> markers = new ArrayList<>();
+        int levelMarkersCount = 7;
+        int levelMarkersAngle = 360;
+        int levelAreaPart = 70;
+        for (Venue venue : venues) {
+            Random angleRandom = new Random();
+            Random distanceRandom = new Random();
+            double rating = venue.getRating();
+            Marker location = venue.getLocation();
+            int ratingLevel = 0;
+            while (rating > 0) {
+                ratingLevel++;
+                int markersCount = rating < 1 ? (int) Math.round(rating * levelMarkersCount) : levelMarkersCount;
+                for (int i = 0; i < markersCount; i++) {
+                    int angle = angleRandom.nextInt(levelMarkersAngle);
+                    int distance = distanceRandom.nextInt(ratingLevel * levelAreaPart);
+                    markers.add(GeoEarthMathUtils.markerOnRadialDistance(location, angle, distance));
+                }
+                rating -= 1.3;
+            }
+        }
+        log.info("Distribution process generate {} markers in {} ms based on {} venues ", markers.size(), (System.currentTimeMillis() - startTime), venues.size());
+        return markers;
+    }
+
+
+    // TODO: Think about clustering ...
+    public List<ColorMarker> apacheMathClustering(List<Marker> markers) {
+        DBSCANClusterer<ColorMarker> clusterer = new DBSCANClusterer<>(200, 40, new ColorMarker());
+        List<Cluster<ColorMarker>> clusters = clusterer.cluster(markers.stream().map(ColorMarker::new).collect(Collectors.toList()));
+        List<String> colors = Stream.of(Color.red, Color.gray, Color.blue, Color.black, Color.cyan, Color.green, Color.magenta, Color.orange, Color.yellow)
+                .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
+                .collect(Collectors.toList());
+        Random random = new Random();
+        ArrayList<ColorMarker> points = new ArrayList<>();
+        for (Cluster<ColorMarker> cluster : clusters) {
+            int index = random.nextInt(colors.size());
+            log.info("Cluster: points = {}, color = {}", cluster.getPoints().size(), colors.get(index));
+            cluster.getPoints().forEach(point -> point.setColor(colors.get(index)));
+            points.addAll(cluster.getPoints());
+        }
+        log.info("Clustering finished!");
+        return points;
+    }
+
+    public List<ColorMarker> smileClustering(List<Marker> markers) {
+        ColorMarker[] array = markers.stream().map(ColorMarker::new).toArray(ColorMarker[]::new);
+        Arrays.stream(array).limit(30).map(marker -> marker.getLatitude() + " " + marker.getLongitude()).forEach(System.out::println);
+        long start = System.currentTimeMillis();
+        DBScan<ColorMarker> colorMarkerDBScan = new DBScan<>(array, (Distance<ColorMarker>) (x, y)
+                -> GeoEarthMathUtils.distance(new Marker(x.getLatitude(), x.getLongitude()), new Marker(y.getLatitude(), y.getLongitude())), 25, 500);
+        log.info("Clustering take {} ms and calculated {} clusters", System.currentTimeMillis() - start, colorMarkerDBScan.getNumClusters());
+
+        List<String> colors = Stream.of(Color.red, Color.gray, Color.blue, Color.black, Color.cyan, Color.green, Color.magenta, Color.orange, Color.yellow)
+                .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
+                .collect(Collectors.toList());
+
+        Random random = new Random();
+        for (int cluster = 0; cluster < colorMarkerDBScan.getNumClusters(); cluster++) {
+            log.info("Cluster #{} contains {} places", cluster, colorMarkerDBScan.getClusterSize()[cluster]);
+            String color = colors.get(random.nextInt(colors.size()));
+            int[] clusterLabel = colorMarkerDBScan.getClusterLabel();
+            for (int i = 0; i < clusterLabel.length; i++) {
+                if (clusterLabel[i] == cluster) {
+                    array[i].setColor(color);
+                }
+            }
+        }
+        return Arrays.stream(array).filter(marker -> Objects.nonNull(marker.getColor())).collect(Collectors.toList());
+    }
+
+    public List<ColorMarker> githubDbscanClustering(List<Marker> markers) {
+        List<ColorMarker> colorMarkers = markers.stream()
+                .map(ColorMarker::new)
+                .collect(Collectors.toList());
+        try {
+            org.christopherfrantz.dbscan.DBSCANClusterer<ColorMarker> clusterer = new org.christopherfrantz.dbscan.DBSCANClusterer<>(colorMarkers, 25, 500, new DistanceMetric<ColorMarker>() {
+                @Override
+                public double calculateDistance(ColorMarker colorMarker, ColorMarker v1) {
+                    return GeoEarthMathUtils.distance(new Marker(colorMarker.getLatitude(), colorMarker.getLongitude()), new Marker(v1.getLatitude(), v1.getLongitude()));
+                }
+            });
+            long start = System.currentTimeMillis();
+            ArrayList<ArrayList<ColorMarker>> clusters = clusterer.performClustering();
+            log.info("Clustering take {} ms and calculated {} clusters", System.currentTimeMillis() - start, clusters.size());
+
+            List<String> colors = Stream.of(Color.red, Color.gray, Color.blue, Color.black, Color.cyan, Color.green, Color.magenta, Color.orange, Color.yellow)
+                    .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
+                    .collect(Collectors.toList());
+
+            Random random = new Random();
+            for (ArrayList<ColorMarker> cluster : clusters) {
+                log.info("Cluster #{} contains {} places", cluster, cluster.size());
+                String color = colors.get(random.nextInt(colors.size()));
+                cluster.forEach(marker -> marker.setColor(color));
+            }
+            return clusters.stream()
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        } catch (DBSCANClusteringException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
 }

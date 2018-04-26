@@ -24,38 +24,32 @@ public class CategoryService {
         this.venueCategoryConfigurationProperties = venueCategoryConfigurationProperties;
     }
 
-    public Optional<Category> valueOfByGoogleKey(String key) {
+    Optional<Category> valueOfByGoogleKey(String key) {
         return venueCategoryConfigurationProperties.getCategories().stream()
                 .filter(category -> category.getGoogleKeys().contains(key))
                 .findFirst();
     }
 
-    public Optional<Category> valueOfByFoursquareKey(String key) {
+    Optional<Category> valueOfByFoursquareKey(String key) {
         return venueCategoryConfigurationProperties.getCategories().stream()
                 .filter(category -> category.getFoursquareKeys().contains(key))
                 .findFirst();
     }
 
-    public String googleApiCategories(String categories) {
-        return map(unjoin(categories)).stream()
+    String googleApiCategories(String categories) {
+        return map(unJoin(categories)).stream()
                 .flatMap(category -> category.getGoogleKeys().stream())
                 .collect(Collectors.joining("|")); // Google separator
     }
 
-    public String foursquareApiCategories(String categories) {
-        return map(unjoin(categories)).stream()
+    String foursquareApiCategories(String categories) {
+        return map(unJoin(categories)).stream()
                 .flatMap(category -> category.getFoursquareKeys().stream())
                 .collect(Collectors.joining(",")); // Foursquare separator
     }
 
-    public List<String> getVenueCategories() {
+    public List<String> getTotalCategories() {
         return venueCategoryConfigurationProperties.getCategories().stream()
-                .map(Category::getTitle)
-                .collect(Collectors.toList());
-    }
-
-    public List<String> unmap(List<Category> categories) {
-        return categories.stream()
                 .map(Category::getTitle)
                 .collect(Collectors.toList());
     }
@@ -66,12 +60,12 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
-    public String join(List<String> categories) {
+    String join(List<String> categories) {
         return categories.stream().collect(Collectors.joining(", ", "[", "]"));
     }
 
-    public List<String> unjoin(String categories) {
-        return Arrays.stream(categories.substring(1, categories.length() - 1).split(", "))
+    private List<String> unJoin(String categories) {
+        return Arrays.stream(categories.substring(1, categories.length() - 1).split(",\\s+"))
                 .map(String::trim)
                 .collect(Collectors.toList());
     }

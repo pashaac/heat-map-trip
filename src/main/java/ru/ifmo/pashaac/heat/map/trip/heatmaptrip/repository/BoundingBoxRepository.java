@@ -8,10 +8,9 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 
 import java.util.List;
 
-@Transactional(readOnly = true)
+@Transactional
 @Repository
 public interface BoundingBoxRepository extends JpaRepository<BoundingBox, Long>  {
-    List<BoundingBox> findBoundingBoxesByCity_IdAndValidIsFalseAndSourceAndCategoriesContains(Long cityId, Source source, String category);
-    List<BoundingBox> findBoundingBoxesByCity_IdAndValidIsTrueAndSourceAndCategoriesContains(Long cityId, Source source, String category);
+    List<BoundingBox> findBoundingBoxesByCity_IdAndSourceAndCategoriesContainsAndValid(Long cityId, Source source, String category, boolean valid);
     List<BoundingBox> findBoundingBoxesByValidIsFalse();
 }

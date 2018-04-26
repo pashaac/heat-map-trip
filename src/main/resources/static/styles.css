@@ -54,7 +54,7 @@ html, body {
     };
 }
 
-#google-map-grid-slider-card {
+#google-map-grid-card {
     position: absolute;
     background: white;
     font-family: sans-serif;
@@ -70,7 +70,7 @@ html, body {
     font-size: small;
 }
 
-#google-map-heat-map-grid-slider-card {
+#google-map-heat-map-card {
     position: absolute;
     background: white;
     font-family: sans-serif;

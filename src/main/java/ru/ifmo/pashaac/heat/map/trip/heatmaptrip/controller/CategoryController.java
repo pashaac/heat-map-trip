@@ -1,5 +1,6 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.controller;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:63342")
 @RestController
 @RequestMapping(value = "/categories")
+@Api(value = "Interface to communicate with categories", description = "API to work with project categories based logic")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -27,7 +29,7 @@ public class CategoryController {
     @RequestMapping(method = RequestMethod.GET)
     @ApiOperation(value = "Heat-Map-Trip service available categories")
     public List<String> getVenueCategories() {
-        return categoryService.getVenueCategories();
+        return categoryService.getTotalCategories();
     }
 
 }
