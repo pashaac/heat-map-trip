@@ -1,11 +1,12 @@
 
-var griBoundingBoxes = [];
+var gridBoundingBoxes = [];
+var gridHeatMapBoundingBoxes = [];
 var invalidBoundingBoxes = [];
 var invalidBoundingBoxesXXX = [];
 
 function googleMapGridSliderInitialization() {
     $("#google-map-grid-slider").change(function () {
-        griBoundingBoxes = clearMapCollection(griBoundingBoxes);
+        gridBoundingBoxes = clearMapCollection(gridBoundingBoxes);
         if (this.value === 0) {
             return;
         }
@@ -15,7 +16,7 @@ function googleMapGridSliderInitialization() {
         var slider = this;
         $.get("http://localhost:8080" + "/boundingboxes/grid?" + params, function (boundingBoxes) {
             boundingBoxes.forEach(function (boundingBox) {
-                griBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
+                gridBoundingBoxes.push(googleRectangle(boundingBox, 'black'));
             });
             slider.disabled = false;
         }).fail(function () {
@@ -35,7 +36,7 @@ function clearMapCollection(collection) {
 }
 
 function clearAnyBoundingBoxes() {
-    griBoundingBoxes = clearMapCollection(griBoundingBoxes);
+    gridBoundingBoxes = clearMapCollection(gridBoundingBoxes);
     invalidBoundingBoxes = clearMapCollection(invalidBoundingBoxes);
     invalidBoundingBoxesXXX = clearMapCollection(invalidBoundingBoxesXXX);
 }
@@ -58,30 +59,22 @@ function googleMapGridHeatMapInitialization() {
 
         var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
         var grid = $("#google-map-grid-slider").val();
-        var source = $("#google-map-venue-source").val();
-        var categories = $("#google-map-venue-category").val();
-        var params = jQuery.param({cityId: city.id, grid: grid, source: source.toUpperCase(), categories: categories.join(',')});
+        var params = jQuery.param({cityId: city.id, grid: grid});
 
-        $.get("http://localhost:8080" + "/venues/locations/scale?" + params, function (markers) {
-            markers.forEach(function (marker) {
-                new google.maps.Circle({
-                    strokeColor: marker.color,
-                    strokeOpacity: 0.8,
-                    strokeWeight: 0.1,
-                    fillColor: 'blue',
-                    fillOpacity: 0.8,
-                    map: MAP_GOOGLE,
-                    center: {lat: marker.latitude, lng: marker.longitude},
-                    radius: 20
-                });
-            })
+        var venuesIds = venues.map(function (venue) { return venue.id;  });
+        $.put("/boundingboxes/grid/heat/map?" + params, JSON.stringify(venuesIds), function (clusterBoundingBoxes) {
+            jQuery.each(clusterBoundingBoxes, function (i, clusterBoundingBox) {
+                if (clusterBoundingBox.color !== '#808080') {
+                    gridHeatMapBoundingBoxes.push(googleRectangleColored(gridBoundingBoxes[clusterBoundingBox.id], clusterBoundingBox.color));
+                }
+            });
         });
 
         // $.get("http://localhost:8080" + "/boundingboxes/grid/heat/map?" + params, function (colors) {
         //     $("#map-clear-button").trigger("dbclick");
         //     jQuery.each(colors, function (i, color) {
         //         if (color !== null) {
-        //             griBoundingBoxesColored.push(googleRectangleColored(griBoundingBoxes[i], color))
+        //             griBoundingBoxesColored.push(googleRectangleColored(gridBoundingBoxes[i], color))
         //         }
         //     });
         // });

@@ -12,7 +12,7 @@ function googleMapShowVenuesButtonInitialization() {
         var source = $("#google-map-venue-source").val();
 
         var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
-        $.put("/venues/collection?" + params, undefined, function (_venues) {
+        $.put("/venues/collection?" + params, function (_venues) {
             _venues.forEach(function (venue) {
                 venueMarkers.push(googleMarker(venue));
             });

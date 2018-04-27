@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.ClusterableBoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
@@ -59,12 +60,14 @@ public class BoundingBoxController {
 
     @RequestMapping(value = "/grid/heat/map", method = RequestMethod.PUT)
     @ApiOperation(value = "Create grid heat-map for the city area")
-    public List<String> createHeatMapOnCityBoundingBoxGrid(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
-                                                           @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) Integer grid,
-                                                           @RequestBody @ApiParam(value = "Venues identifiers", required = true) List<Long> venueIds) {
+    public List<ClusterableBoundingBox> createHeatMapOnCityBoundingBoxGrid(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                                                           @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) Integer grid,
+                                                                           @RequestBody @ApiParam(value = "Venues identifiers", required = true) List<Long> venueIds) {
         List<BoundingBox> gridBoundingBoxes = calculateGridCityBoundingBox(cityId, grid);
         List<Venue> venues = venueService.getVenues(venueIds);
-        return boundingBoxService.gridHeatMap(venues, gridBoundingBoxes, grid);
+        List<Venue> validVenues = venueService.venueValidation(venues);
+        double pleasure = boundingBoxService.calculateAveragePleasure(validVenues);
+        return boundingBoxService.smileClustering(venues, gridBoundingBoxes, pleasure);
     }
 
     @RequestMapping(path = "/mine", method = RequestMethod.PUT)

@@ -3,7 +3,7 @@ function geolocationReverseBrowser() {
         navigator.geolocation.getCurrentPosition(function (pos) {
             var params = $.param({lat: pos.coords.latitude, lng: pos.coords.longitude});
             console.log("automation browser geolocation coordinates: " + params);
-            $.put("/geolocation/reverse?" + params, undefined, function (city) {
+            $.put("/geolocation/reverse?" + params, function (city) {
                 var southwest = {lat: city.boundingBox.southWest.latitude, lng: city.boundingBox.southWest.longitude};
                 var northeast = {lat: city.boundingBox.northEast.latitude, lng: city.boundingBox.northEast.longitude};
                 MAP_GOOGLE.fitBounds(new google.maps.LatLngBounds(southwest, northeast));
@@ -47,7 +47,7 @@ function googleMapSearchBoxInitialization() {
         $googleMapCitySearchBox.val(place.formatted_address);
         var params = $.param({lat: place.geometry.location.lat(), lng: place.geometry.location.lng()});
         console.log("search box city geolocation coordinates: " + params);
-        $.put("/geolocation/reverse?" + params, undefined, function (city) {
+        $.put("/geolocation/reverse?" + params, function (city) {
             var southwest = {lat: city.boundingBox.southWest.latitude, lng: city.boundingBox.southWest.longitude};
             var northeast = {lat: city.boundingBox.northEast.latitude, lng: city.boundingBox.northEast.longitude};
             MAP_GOOGLE.fitBounds(new google.maps.LatLngBounds(southwest, northeast));

@@ -71,6 +71,7 @@ function googleMapClearInitialization() {
         $("#google-map-heat-map-slider").val(0).prop("disabled", true); // clear heat-map
         MAP_HEAT_MAP.data = [];
         MAP_HEAT_MAP.update();
+        gridHeatMapBoundingBoxes = clearMapCollection(gridHeatMapBoundingBoxes);
     })
 }
 

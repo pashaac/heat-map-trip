@@ -1,5 +1,16 @@
+function isFunction(obj) {
+    return typeof obj === "function" && typeof obj.nodeType !== "number";
+}
+
 jQuery.each(["put", "delete"], function (i, method) {
     jQuery[method] = function (url, data, callback, error) {
+
+        // Shift arguments if data argument was omitted
+        if (isFunction(data)) {
+            callback = data;
+            data = undefined;
+        }
+
         return jQuery.ajax({
             url: "http://localhost:8080" + url,
             type: method,
@@ -32,7 +43,7 @@ var googleRectangle = function (boundingBox, color) {
 var googleRectangleColored = function (boundingBox, color) {
     return new google.maps.Rectangle({
         strokeWeight: 0,
-        fillOpacity: 0.9,
+        fillOpacity: 0.8,
         fillColor: color,
         map: MAP_GOOGLE,
         bounds: boundingBox.bounds
@@ -48,7 +59,7 @@ var googleRectangleX = function (boundingBox, color) {
         geodesic: true,
         strokeColor: color,
         strokeOpacity: 1,
-        strokeWeight: 2 ,
+        strokeWeight: 2,
         fillOpacity: 0.05,
         map: MAP_GOOGLE
     });
@@ -61,7 +72,7 @@ var googleRectangleX = function (boundingBox, color) {
         geodesic: true,
         strokeColor: color,
         strokeOpacity: 1,
-        strokeWeight: 2 ,
+        strokeWeight: 2,
         fillOpacity: 0.05,
         map: MAP_GOOGLE
     });

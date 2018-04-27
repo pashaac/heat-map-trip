@@ -63,9 +63,6 @@ dependencies {
 	// Geo Earth calculator
 	compile files('src/main/resources/libs/geocalc/geocalc-0.5.1.jar')
 
-	// DBSCAN
-	compile files('src/main/resources/libs/dbscan/dbscan-0.1.jar')
-
 	// PostgreSQL
 	runtime('org.postgresql:postgresql')
 

@@ -1,10 +1,13 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.ClusterableBoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -118,6 +122,77 @@ public class BoundingBoxService {
 //                .collect(Collectors.toList());
     }
 
+    public double calculateAveragePleasure(List<Venue> venues) {
+        double totalRating = venues.stream().mapToDouble(Venue::getRating).sum();
+        double totalDistance = 0;
+        for (int i = 0; i < venues.size(); i++) {
+            for (int j = i + 1; j < venues.size(); j++) {
+                totalDistance += GeoEarthMathUtils.distance(venues.get(i).getLocation(), venues.get(j).getLocation());
+            }
+        }
+        log.info("Total rating: {}", totalRating);
+        log.info("Total distance: {}", totalDistance);
+        double averageDistance = totalDistance / (venues.size() * (venues.size() - 1) / 2);
+        double averageRating = totalRating / venues.size();
+        log.info("Average distance: {}", averageDistance);
+        log.info("Average rating : {}", averageRating);
+        log.info("Pleasure (in meters): {}", averageRating / averageDistance);
+        return averageRating / averageDistance;
+    }
+
+    public List<ClusterableBoundingBox> smileClustering(List<Venue> venues, List<BoundingBox> boundingBoxes, double pleasure) {
+        List<ClusterableBoundingBox> clusterableBoundingBoxes = new ArrayList<>();
+        for (int i = 0; i < boundingBoxes.size(); i++) {
+            double rating = 0;
+            double count = 1;
+            int outerRadius = GeoEarthMathUtils.outerRadius(boundingBoxes.get(i));
+            for (Venue venue : venues) {
+                if (GeoEarthMathUtils.contains(boundingBoxes.get(i), venue.getLocation())) {
+                    rating += venue.getRating();
+                    count += 1;
+                    continue;
+                }
+                double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
+                if (distance < 2 * outerRadius) {
+                    rating += venue.getRating() * 0.666;
+                    count += 0.666;
+                    continue;
+                }
+                if (distance < 5 * outerRadius) {
+                    rating += venue.getRating() * 0.333;
+                    count += 0.333;
+                }
+            }
+            clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, rating / Math.sqrt(count), null));
+        }
+
+        KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 1000, new ClusterableBoundingBox());
+        List<CentroidCluster<ClusterableBoundingBox>> clusters = clusterer.cluster(clusterableBoundingBoxes);
+        log.info("Clusters count: {}", clusters.size());
+        List<String> colors = Stream.of(Color.gray, Color.green, Color.yellow, Color.orange, Color.red)
+                .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
+                .collect(Collectors.toList());
+
+        List<Double> sortedCenters = clusters.stream()
+                .mapToDouble(cluster -> cluster.getCenter().getPoint()[0])
+                .sorted()
+                .boxed()
+                .collect(Collectors.toList());
+
+        clusterableBoundingBoxes.clear();
+        for (int i = 0; i < sortedCenters.size(); i++) {
+            String color = colors.get(i);
+            Double center = sortedCenters.get(i);
+            for (CentroidCluster<ClusterableBoundingBox> cluster : clusters) {
+                if (Math.abs(cluster.getCenter().getPoint()[0] - center) < 0.001) {
+                    cluster.getPoints().forEach(point -> point.setColor(color));
+                    clusterableBoundingBoxes.addAll(cluster.getPoints());
+                }
+            }
+        }
+        return clusterableBoundingBoxes;
+    }
+
     public List<String> gridHeatMap(List<Venue> venues, List<BoundingBox> boundingBoxes, int grid) {
         double[] boundingBoxRatings = new double[boundingBoxes.size()];
         for (Venue venue : venues) {
@@ -167,7 +242,7 @@ public class BoundingBoxService {
         double maxRating = Arrays.stream(boundingBoxRatings).max().orElse(0.0);
         double minRating = Arrays.stream(boundingBoxRatings).min().orElse(0.0);
 
-        double step = steps/ (maxRating - minRating);
+        double step = steps / (maxRating - minRating);
         return Arrays.stream(boundingBoxRatings)
                 .mapToObj(rating -> {
                     int index = (int) Math.round(step * (rating - minRating));

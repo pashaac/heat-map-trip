@@ -3,8 +3,6 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.DBSCANClusterer;
-import org.christopherfrantz.dbscan.DBSCANClusteringException;
-import org.christopherfrantz.dbscan.DistanceMetric;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -172,34 +170,29 @@ public class VenueService {
         return venues;
     }
 
-    // TODO: need improvements in this algorithm
+    // TODO: need improvements in this algorithm / Use special filtering: invalidate all -> filtering -> set valid flag in db -> return
     public List<Venue> venueValidation(List<Venue> dirtyVenues) {
-        // TODO: Use special filtering: invalidate all -> filtering -> set valid flag in db -> return
-        // Possible remove flag game, but for debug very useful
-        Map<String, List<Venue>> categoryGroups = dirtyVenues.stream().collect(Collectors.groupingBy(Venue::getCategory));
-        log.info("Plan validate {} dirty venues from categories = {}", dirtyVenues.size(), categoryService.join(categoryGroups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList())));
         long startTime = System.currentTimeMillis();
+//        List<Venue> venues = dirtyVenues.stream()
+//                .peek(venue -> venue.setValid(false))
+//                .collect(Collectors.toList());
+//        venues = venueRepository.save(venues); // invalidate all
         List<Venue> venues = dirtyVenues.stream()
-                .peek(venue -> venue.setValid(false))
-                .collect(Collectors.toList());
-        venues = venueRepository.save(venues); // invalidate all
-        venues = venues.stream()
                 .filter(venue -> Objects.nonNull(venue.getCategory()))
+                .filter(venue -> Character.isAlphabetic(venue.getTitle().charAt(0)))
                 .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
                 .collect(Collectors.toList());
 
         Map<String, List<Venue>> groupedVenues = venues.stream().collect(Collectors.groupingBy(Venue::getCategory));
         Map<String, Double> averageRating = venues.stream().collect(Collectors.groupingBy(Venue::getCategory, Collectors.averagingDouble(Venue::getRating)));
         venues = groupedVenues.entrySet().stream()
-                .map(Map.Entry::getValue)
-                .flatMap(subVenues -> subVenues.stream()
-                        .filter(venue -> venue.getRating() > averageRating.get(venue.getCategory())
-                                * venueCategoryConfigurationProperties.getLowerRatingBound()))
-                .peek(venue -> venue.setValid(true))
+                .peek(entry -> log.info("Filtering {} venues from category {}", entry.getValue().size(), entry.getKey()))
+                .flatMap(entry -> entry.getValue().stream()
+                        .filter(venue -> venue.getRating() > averageRating.get(venue.getCategory()) * venueCategoryConfigurationProperties.getLowerRatingBound()))
+//                .peek(venue -> venue.setValid(true))
                 .collect(Collectors.toList());
         venues = venueRepository.save(venues); // true valid flag for filtered venues
-        log.info("After filtering become {} venues from categories = {}, filtering time = {} ms", venues.size(),
-                categoryService.join(categoryGroups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList())), (System.currentTimeMillis() - startTime));
+        log.info("After filtering become {} venues, filtering time = {} ms", venues.size(), (System.currentTimeMillis() - startTime));
 
         double minRatingValue = venues.stream().mapToDouble(Venue::getRating).min().orElse(0.0);
         double maxRatingValue = venues.stream().mapToDouble(Venue::getRating).max().orElse(0.0);
@@ -280,40 +273,6 @@ public class VenueService {
             }
         }
         return Arrays.stream(array).filter(marker -> Objects.nonNull(marker.getColor())).collect(Collectors.toList());
-    }
-
-    public List<ColorMarker> githubDbscanClustering(List<Marker> markers) {
-        List<ColorMarker> colorMarkers = markers.stream()
-                .map(ColorMarker::new)
-                .collect(Collectors.toList());
-        try {
-            org.christopherfrantz.dbscan.DBSCANClusterer<ColorMarker> clusterer = new org.christopherfrantz.dbscan.DBSCANClusterer<>(colorMarkers, 25, 500, new DistanceMetric<ColorMarker>() {
-                @Override
-                public double calculateDistance(ColorMarker colorMarker, ColorMarker v1) {
-                    return GeoEarthMathUtils.distance(new Marker(colorMarker.getLatitude(), colorMarker.getLongitude()), new Marker(v1.getLatitude(), v1.getLongitude()));
-                }
-            });
-            long start = System.currentTimeMillis();
-            ArrayList<ArrayList<ColorMarker>> clusters = clusterer.performClustering();
-            log.info("Clustering take {} ms and calculated {} clusters", System.currentTimeMillis() - start, clusters.size());
-
-            List<String> colors = Stream.of(Color.red, Color.gray, Color.blue, Color.black, Color.cyan, Color.green, Color.magenta, Color.orange, Color.yellow)
-                    .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
-                    .collect(Collectors.toList());
-
-            Random random = new Random();
-            for (ArrayList<ColorMarker> cluster : clusters) {
-                log.info("Cluster #{} contains {} places", cluster, cluster.size());
-                String color = colors.get(random.nextInt(colors.size()));
-                cluster.forEach(marker -> marker.setColor(color));
-            }
-            return clusters.stream()
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-        } catch (DBSCANClusteringException e) {
-            e.printStackTrace();
-        }
-        return Collections.emptyList();
     }
 
 }
