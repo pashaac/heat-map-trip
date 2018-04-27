@@ -153,15 +153,30 @@ public class BoundingBoxService {
                     continue;
                 }
                 double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
-                if (distance < 2 * outerRadius) {
-                    rating += venue.getRating() * 0.666;
-                    count += 0.666;
+                if (distance < outerRadius) {
+                    rating += venue.getRating() * 0.8;
+                    count += 0.8;
                     continue;
                 }
-                if (distance < 5 * outerRadius) {
-                    rating += venue.getRating() * 0.333;
-                    count += 0.333;
+                if (distance < outerRadius * 2) {
+                    rating += venue.getRating() * 0.6;
+                    count += 0.6;
+                    continue;
                 }
+                if (distance < outerRadius * 3) {
+                    rating += venue.getRating() * 0.4;
+                    count += 0.4;
+                    continue;
+                }
+                if (distance < outerRadius * 4) {
+                    rating += venue.getRating() * 0.2;
+                    count += 0.2;
+                }
+//                Another not bad variant
+//                double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
+//                int cells = (int) Math.round(distance / outerRadius);
+//                rating += Math.max(0.0, venue.getRating() * (1 - cells * 0.2));
+//                count += Math.max(0.0, 1 - cells * 0.2);
             }
             clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, rating / Math.sqrt(count), null));
         }
