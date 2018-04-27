@@ -67,7 +67,7 @@ public class BoundingBoxController {
         List<Venue> venues = venueService.getVenues(venueIds);
         List<Venue> validVenues = venueService.venueValidation(venues);
         double pleasure = boundingBoxService.calculateAveragePleasure(validVenues);
-        return boundingBoxService.smileClustering(venues, gridBoundingBoxes, pleasure);
+        return boundingBoxService.smileClustering(validVenues, gridBoundingBoxes, pleasure);
     }
 
     @RequestMapping(path = "/mine", method = RequestMethod.PUT)

@@ -28,7 +28,7 @@ foursquare:
 # = Google: https://developers.google.com/places/supported_types
 # ===============================
 venue:
-  lower-rating-bound: 0.1 # <- this part from average rating by category
+  lower-rating-bound: 0.05 # <- this part from average rating by category
   categories:
     -
       title: Art

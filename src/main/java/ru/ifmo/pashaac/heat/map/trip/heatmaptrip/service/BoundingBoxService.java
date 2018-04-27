@@ -3,6 +3,7 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -154,34 +155,25 @@ public class BoundingBoxService {
                 }
                 double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
                 if (distance < outerRadius) {
-                    rating += venue.getRating() * 0.8;
-                    count += 0.8;
+                    rating += venue.getRating() * 0.9999;
+                    count += 0.9999;
                     continue;
                 }
                 if (distance < outerRadius * 2) {
-                    rating += venue.getRating() * 0.6;
-                    count += 0.6;
+                    rating += venue.getRating() * 0.6666;
+                    count += 0.6666;
                     continue;
                 }
                 if (distance < outerRadius * 3) {
-                    rating += venue.getRating() * 0.4;
-                    count += 0.4;
-                    continue;
+                    rating += venue.getRating() * 0.3333;
+                    count += 0.3333;
                 }
-                if (distance < outerRadius * 4) {
-                    rating += venue.getRating() * 0.2;
-                    count += 0.2;
-                }
-//                Another not bad variant
-//                double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
-//                int cells = (int) Math.round(distance / outerRadius);
-//                rating += Math.max(0.0, venue.getRating() * (1 - cells * 0.2));
-//                count += Math.max(0.0, 1 - cells * 0.2);
+//              Possible find another formulas if scan git history of this file
             }
             clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, rating / Math.sqrt(count), null));
         }
 
-        KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 1000, new ClusterableBoundingBox());
+        KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 2500, new ClusterableBoundingBox(), new JDKRandomGenerator(), KMeansPlusPlusClusterer.EmptyClusterStrategy.LARGEST_POINTS_NUMBER);
         List<CentroidCluster<ClusterableBoundingBox>> clusters = clusterer.cluster(clusterableBoundingBoxes);
         log.info("Clusters count: {}", clusters.size());
         List<String> colors = Stream.of(Color.gray, Color.green, Color.yellow, Color.orange, Color.red)

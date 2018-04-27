@@ -191,7 +191,7 @@ public class VenueService {
                         .filter(venue -> venue.getRating() > averageRating.get(venue.getCategory()) * venueCategoryConfigurationProperties.getLowerRatingBound()))
 //                .peek(venue -> venue.setValid(true))
                 .collect(Collectors.toList());
-        venues = venueRepository.save(venues); // true valid flag for filtered venues
+//        venues = venueRepository.save(venues); // true valid flag for filtered venues
         log.info("After filtering become {} venues, filtering time = {} ms", venues.size(), (System.currentTimeMillis() - startTime));
 
         double minRatingValue = venues.stream().mapToDouble(Venue::getRating).min().orElse(0.0);

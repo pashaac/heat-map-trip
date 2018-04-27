@@ -13,12 +13,18 @@ function googleMapShowVenuesButtonInitialization() {
 
         var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
         $.put("/venues/collection?" + params, function (_venues) {
-            _venues.forEach(function (venue) {
-                venueMarkers.push(googleMarker(venue));
+            var venuesIds = _venues.map(function (venue) { return venue.id;  });
+            $.put("/venues/validation", JSON.stringify(venuesIds), function (validVenues) {
+                validVenues.forEach(function (venue) {
+                    venueMarkers.push(googleMarker(venue));
+                });
+                venues = venues.concat(validVenues);
+                $("#google-map-heat-map-slider").prop("disabled", false);
+                showInvalidBoundingBoxes(city, categories, source);
+            }, function () {
+                console.error("Heat-map venues validation service temporary unavailable...");
+                alert("Heat-map venues validation service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
             });
-            venues = venues.concat(_venues);
-            $("#google-map-heat-map-slider").prop("disabled", false);
-            showInvalidBoundingBoxes(city, categories, source);
         }, function () {
             console.error("Heat-map venues mine service temporary unavailable...");
             alert("Heat-map venues mine service temporary unavailable...\nRepeat your last act after some pause or contact with developer");
