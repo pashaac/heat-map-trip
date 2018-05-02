@@ -42,15 +42,15 @@
              error-message="Select the city from dropdown!"></paper-input>
 
 <paper-dropdown id="google-map-venue-source" label="The data source" value="{{value}}" searchable
-                error-message="Select the data source from dropdown!">
+                error-message="Select an element from the list!">
     <paper-item value="google">Google</paper-item>
     <paper-item value="foursquare">Foursquare</paper-item>
 </paper-dropdown>
 
 <dom-bind id="google-map-venue-category-dom">
     <template>
-        <paper-dropdown id="google-map-venue-category" label="Select any category" value="{{value}}" searchable multi
-                        error-message="Select at least one of any categories from dropdown!">
+        <paper-dropdown id="google-map-venue-category" label="Categories" value="{{value}}" searchable multi
+                        error-message="Select at least one item from the list!">
             <template is="dom-repeat" items="{{items}}">
                 <paper-item value$="{{item.value}}">{{item.value}}</paper-item>
             </template>
@@ -59,16 +59,16 @@
 </dom-bind>
 
 <paper-card id="google-map-grid-card">
-    <div id="google-map-grid-slider-text">Grid density ^ 2
-        <paper-button id="google-map-grid-heat-map-button">Grid-Heat-Map</paper-button>
+    <div id="google-map-grid-slider-text">Grid density
+        <paper-button id="google-map-grid-heat-map-button" disabled>Grid Heat-Map</paper-button>
     </div>
     <paper-slider id="google-map-grid-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
-                      max="50" max-markers="51" step="1" value="0"></paper-slider>
+                  max="50" max-markers="51" step="1" value="0"></paper-slider>
 </paper-card>
 <paper-card id="google-map-heat-map-card">
-    <div id="google-map-heat-map-slider-text">Real-Heat-Map (slider for intensity)</div>
-    <paper-slider id="google-map-heat-map-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable
-              max="30" max-markers="31" step="1" value="0" disabled></paper-slider>
+    <div id="google-map-heat-map-slider-text">Heat-Map radius intensity</div>
+    <paper-slider id="google-map-heat-map-slider" pin ignoreBarTouch noink snaps min="0" dir="ltr" editable max="30"
+                  max-markers="31" step="1" value="0" disabled></paper-slider>
 </paper-card>
 <paper-button id="map-clear-button" raised>Clean Map</paper-button>
 <paper-button id="map-show-venues-button" raised>Show Places</paper-button>

@@ -65,6 +65,7 @@ function googleMapClearInitialization() {
         if (MAP_HEAT_MAP.data.length === 0) {
             $("#google-map-heat-map-slider").prop("disabled", true);
         }
+        $("#google-map-grid-heat-map-button").prop("disabled", true);
     });
     $mapClearButton.dblclick(function () {
         $mapClearButton.trigger("click");               // clear all

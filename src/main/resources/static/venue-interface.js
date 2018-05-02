@@ -20,6 +20,7 @@ function googleMapShowVenuesButtonInitialization() {
                 });
                 venues = venues.concat(validVenues);
                 $("#google-map-heat-map-slider").prop("disabled", false);
+                $("#google-map-grid-heat-map-button").prop("disabled", false);
                 showInvalidBoundingBoxes(city, categories, source);
             }, function () {
                 console.error("Heat-map venues validation service temporary unavailable...");
