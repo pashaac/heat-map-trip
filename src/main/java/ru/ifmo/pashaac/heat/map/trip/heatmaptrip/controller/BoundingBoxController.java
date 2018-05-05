@@ -12,9 +12,11 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @CrossOrigin(origins = "http://localhost:63342")
@@ -56,6 +58,26 @@ public class BoundingBoxController {
             throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
         }
         return boundingBoxService.gridBoundingBox(cityId, grid);
+    }
+
+    @RequestMapping(value = "/grid/collection", method = RequestMethod.GET)
+    @ApiOperation(value = "Collect venues through the grid areas")
+    public List<Venue> collectGridCityVenues(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
+                                             @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) Integer grid,
+                                             @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
+                                             @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+        if (Objects.isNull(grid) || grid < 1) {
+            throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
+        }
+        List<BoundingBox> boundingBoxes = boundingBoxService.gridBoundingBox(cityId, grid);
+        log.info("Bounding boxes count: {}", boundingBoxes.size());
+        log.info("Cell size: {} x {}", GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0))),
+                GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0))));
+        List<Venue> venues = boundingBoxes.stream()
+                .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream())
+                .collect(Collectors.toList());
+        log.info("Was found {} venues from categories: {}", venues.size(), categories);
+        return venues;
     }
 
     @RequestMapping(value = "/grid/heat/map", method = RequestMethod.PUT)

@@ -9,7 +9,6 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 
 import java.util.List;
@@ -26,12 +25,10 @@ import java.util.List;
 public class VenueController {
 
     private final VenueService venueService;
-    private final BoundingBoxService boundingBoxService;
 
     @Autowired
-    public VenueController(VenueService venueService, BoundingBoxService boundingBoxService) {
+    public VenueController(VenueService venueService) {
         this.venueService = venueService;
-        this.boundingBoxService = boundingBoxService;
     }
 
     @RequestMapping(path = "/client/api/call", method = RequestMethod.PUT)
@@ -61,12 +58,4 @@ public class VenueController {
         log.info("Was generated {} markers", markers.size());
         return markers;
     }
-
-    @RequestMapping(path = "/quad/tree/collect/dirty", method = RequestMethod.PUT)
-    public List<Venue> getDirtyVenues(@RequestParam @ApiParam(value = "City id of the search", required = true) Long cityId,
-                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
-                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        return venueService.quadTreeMineIfNeeded(cityId, source, categories);
-    }
-
 }
