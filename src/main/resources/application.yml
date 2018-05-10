@@ -19,7 +19,7 @@ foursquare:
     client-id: PQDUHRGQ3LRAIQBMC5VJZTR0ZENNBYO03Q1ERFXXG1HI0Y1S
     client-secret: 2ARYMHXILVTZXYSLZL5THOPWK1OGGIQW03FFRWYG52OCBMRK
     redirect-url:
-    venue-limit: 30
+    venue-limit: 25 # real 30 but in some cases 4sq return fake count
     call-fail-delay: 1500
 
 # ===============================
@@ -64,6 +64,19 @@ venue:
         - 4bf58dd8d48988d110941735 # Italian Restaurant
         - 4bf58dd8d48988d10c941735 # French Restaurant
     -
+      title: Municipality
+      google-keys:
+        - city_hall
+        - library
+        - local_government_office
+        - train_station
+      foursquare-keys:
+        - 4bf58dd8d48988d12f941735 # Library
+        - 52e81612bcbc57f1066b7a38 # Town Hall
+        - 4bf58dd8d48988d126941735 # Government Building
+        - 4bf58dd8d48988d12a941735 # Capitol Building
+        - 4bf58dd8d48988d1df941735 # Bridge
+    -
       title: Nature
       google-keys:
         - park
@@ -73,19 +86,6 @@ venue:
         - 52e81612bcbc57f1066b7a23 # Forest
         - 52e81612bcbc57f1066b7a21 # National Park
         - 56aa371be4b08b9a8d573560 # Waterfall
-    -
-     title: Municipality
-     google-keys:
-       - city_hall
-       - library
-       - local_government_office
-       - train_station
-     foursquare-keys:
-       - 4bf58dd8d48988d12f941735 # Library
-       - 52e81612bcbc57f1066b7a38 # Town Hall
-       - 4bf58dd8d48988d126941735 # Government Building
-       - 4bf58dd8d48988d12a941735 # Capitol Building
-       - 4bf58dd8d48988d1df941735 # Bridge
     -
       title: Shrine
       google-keys:
