@@ -22,7 +22,7 @@ function googleMapCategoriesInitialization() {
         }))
     });
     $("#google-map-venue-category").bind("close", function () {
-        var categoriesStr = this.value.join(' | ');
+        var categoriesStr = this.value.sort().join(' | ');
         if (!categoriesStr) {
             return;
         }

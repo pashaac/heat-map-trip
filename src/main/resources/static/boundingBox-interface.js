@@ -2,6 +2,7 @@
 var gridBoundingBoxes = [];
 var gridHeatMapBoundingBoxes = [];
 var invalidBoundingBoxes = [];
+var validBoundingBoxes = [];
 var invalidBoundingBoxesXXX = [];
 
 function googleMapGridSliderInitialization() {
@@ -47,6 +48,15 @@ function showInvalidBoundingBoxes(city, categories, source) {
         boundingBoxes.forEach(function (boundingBox) {
             invalidBoundingBoxes.push(googleRectangle(boundingBox, 'red'));
             invalidBoundingBoxesXXX = invalidBoundingBoxesXXX.concat(googleRectangleX(boundingBox, 'red'))
+        })
+    });
+}
+
+function showValidBoundingBoxes(city, categories, source) {
+    var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
+    $.get("http://localhost:8080" + "/boundingboxes/valid?" + params, function (boundingBoxes) {
+        boundingBoxes.forEach(function (boundingBox) {
+            validBoundingBoxes.push(googleRectangle(boundingBox, 'green'));
         })
     });
 }

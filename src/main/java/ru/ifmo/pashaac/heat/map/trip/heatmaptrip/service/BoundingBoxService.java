@@ -50,7 +50,7 @@ public class BoundingBoxService {
     public List<BoundingBox> getValidBasedBoundingBoxes(Long cityId, Source source, List<String> categories, boolean valid) {
         Map<Long, BoundingBox> boundingBoxMap = categories.stream()
                 .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndSourceAndCategoriesContainsAndValid(cityId, source, category, valid).stream())
-                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox));
+                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox, (b1, b2) -> b1));
         return boundingBoxMap.entrySet().stream()
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
@@ -74,6 +74,52 @@ public class BoundingBoxService {
         return boundingBoxRepository.save(boundingBox);
     }
 
+    public List<BoundingBox> stupidIncrementGridBoundingBox(Long cityId, int grid) {
+        BoundingBox boundingBox = cityRepository.findOne(cityId).getBoundingBox();
+        Marker sw = boundingBox.getSouthWest();
+        Marker se = GeoEarthMathUtils.getSouthEast(boundingBox);
+        Marker nw = GeoEarthMathUtils.getNorthWest(boundingBox);
+
+        double sweDistance = GeoEarthMathUtils.distance(sw, se);
+        double wsnDistance = GeoEarthMathUtils.distance(sw, nw);
+        double sweStep = sweDistance / grid;
+        double wsnStep = wsnDistance / grid;
+
+        List<BoundingBox> boundingBoxes = new ArrayList<>();
+        Marker x = sw, xNext = sw;
+        for (int i = 0; i < grid; i++) {
+            x = xNext;
+            xNext = GeoEarthMathUtils.markerOnRadialDistance(x, 90, sweStep);
+            Marker y = x, yNext = x;
+            for (int j = 0; j < grid; j++) {
+                y = yNext;
+                yNext = GeoEarthMathUtils.markerOnRadialDistance(y, 0, wsnStep);
+                boundingBoxes.add(new BoundingBox(new Marker(y.getLatitude(), x.getLongitude()),
+                        new Marker(yNext.getLatitude(), xNext.getLongitude())));
+            }
+        }
+        return boundingBoxes;
+    }
+
+    public List<BoundingBox> stupidStreamGridBoundingBox(Long cityId, int grid) {
+        BoundingBox boundingBox = cityRepository.findOne(cityId).getBoundingBox();
+        return IntStream.range(0, grid * grid)
+                .mapToObj(cell -> {
+                    int x = cell % grid;
+                    int y = cell / grid;
+                    Marker sw = boundingBox.getSouthWest();
+                    Marker se = GeoEarthMathUtils.getSouthEast(boundingBox);
+                    double xWestLongitude = GeoEarthMathUtils.measureOut(sw, se, (double) x / grid).getLongitude();
+                    double xEastLongitude = GeoEarthMathUtils.measureOut(sw, se, (double) (x + 1) / grid).getLongitude();
+                    Marker northWest = GeoEarthMathUtils.getNorthWest(boundingBox);
+                    double ySouthLatitude = GeoEarthMathUtils.measureOut(sw, northWest, (double) y / grid).getLatitude();
+                    double yNorthLatitude = GeoEarthMathUtils.measureOut(sw, northWest, (double) (y + 1) / grid).getLatitude();
+                    return new BoundingBox(new Marker(ySouthLatitude, xWestLongitude), new Marker(yNorthLatitude, xEastLongitude));
+                })
+                .collect(Collectors.toList());
+    }
+
+
     public List<BoundingBox> gridBoundingBox(Long cityId, int grid) {
         BoundingBox boundingBox = cityRepository.findOne(cityId).getBoundingBox();
         List<BoundingBox> boundingBoxes = new ArrayList<>();
@@ -90,10 +136,8 @@ public class BoundingBoxService {
                     Marker bboxNorthWest = GeoEarthMathUtils.getNorthWest(new BoundingBox(southWest, boundingBoxNorthEast));
                     southWest = GeoEarthMathUtils.measureOut(southWest, bboxNorthWest, 1.0 / (grid - i));
                 }
-
                 Marker southEast = GeoEarthMathUtils.getSouthEast(new BoundingBox(southWest, boundingBoxNorthEast));
                 southEast = GeoEarthMathUtils.measureOut(southWest, southEast, 1.0 / (grid - xWest));
-
                 Marker northEast = GeoEarthMathUtils.getNorthWest(new BoundingBox(southEast, boundingBoxNorthEast)); // yes, northEast
                 northEast = GeoEarthMathUtils.measureOut(southEast, northEast, 1.0 / (grid - ySouth));
 
@@ -101,26 +145,6 @@ public class BoundingBoxService {
             }
         }
         return boundingBoxes;
-
-//      TODO: old version which provide bad aligning, not good accurancy. Only for demonstration
-//        return IntStream.range(0, grid * grid)
-//                .mapToObj(cell -> {
-//                    int xWest = cell % grid;
-//                    int ySouth = cell / grid;
-//
-//                    Marker southWest = boundingBox.getSouthWest();
-//
-//                    Marker southEast = GeoEarthMathUtils.getSouthEast(boundingBox);
-//                    double xWestLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) xWest / grid).getLongitude();
-//                    double xEastLongitude = GeoEarthMathUtils.measureOut(southWest, southEast, (double) (xWest + 1) / grid).getLongitude();
-//
-//                    Marker northWest = GeoEarthMathUtils.getNorthWest(boundingBox);
-//                    double ySouthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) ySouth / grid).getLatitude();
-//                    double yNorthLatitude = GeoEarthMathUtils.measureOut(southWest, northWest, (double) (ySouth + 1) / grid).getLatitude();
-//
-//                    return new BoundingBox(new Marker(ySouthLatitude, xWestLongitude), new Marker(yNorthLatitude, xEastLongitude));
-//                })
-//                .collect(Collectors.toList());
     }
 
     public double calculateAveragePleasure(List<Venue> venues) {
@@ -154,29 +178,19 @@ public class BoundingBoxService {
                     continue;
                 }
                 double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
-                if (distance < outerRadius) {
-                    rating += venue.getRating() * 0.9999;
-                    count += 0.9999;
-                    continue;
-                }
-                if (distance < outerRadius * 2) {
-                    rating += venue.getRating() * 0.6666;
-                    count += 0.6666;
-                    continue;
-                }
                 if (distance < outerRadius * 3) {
-                    rating += venue.getRating() * 0.3333;
-                    count += 0.3333;
+                    rating += venue.getRating() * (3 * outerRadius - distance) / outerRadius;
+                    count += (3 * outerRadius - distance) / outerRadius;
                 }
 //              Possible find another formulas if scan git history of this file
             }
             clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, rating / Math.sqrt(count), null));
         }
 
-        KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 2500, new ClusterableBoundingBox(), new JDKRandomGenerator(), KMeansPlusPlusClusterer.EmptyClusterStrategy.LARGEST_POINTS_NUMBER);
+        KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 10_000, new ClusterableBoundingBox(), new JDKRandomGenerator(), KMeansPlusPlusClusterer.EmptyClusterStrategy.LARGEST_POINTS_NUMBER);
         List<CentroidCluster<ClusterableBoundingBox>> clusters = clusterer.cluster(clusterableBoundingBoxes);
         log.info("Clusters count: {}", clusters.size());
-        List<String> colors = Stream.of(Color.gray, Color.green, Color.yellow, Color.orange, Color.red)
+        List<String> colors = Stream.of(Color.gray, new Color(173, 255, 47), Color.yellow, new Color(255, 140, 0), Color.red)
                 .map(color -> String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()))
                 .collect(Collectors.toList());
 

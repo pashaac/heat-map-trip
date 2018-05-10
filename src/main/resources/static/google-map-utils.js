@@ -88,3 +88,16 @@ var googleMarker = function (venue) {
     })
 };
 
+
+var googleCircle = function (venue) {
+    return new google.maps.Circle({
+        strokeColor: 'red',
+        strokeOpacity: 1,
+        strokeWeight: 1,
+        fillColor: 'red',
+        fillOpacity: 1,
+        map: MAP_GOOGLE,
+        center: {lat: venue.location.latitude, lng: venue.location.longitude},
+        radius: 50
+    });
+};

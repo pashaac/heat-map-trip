@@ -57,7 +57,10 @@ public class BoundingBoxController {
         if (Objects.isNull(grid) || grid < 1) {
             throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
         }
-        return boundingBoxService.gridBoundingBox(cityId, grid);
+        List<BoundingBox> boundingBoxes = boundingBoxService.gridBoundingBox(cityId, grid);
+        log.info("Cell size: {} x {}", GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0))),
+                GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0))));
+        return boundingBoxes;
     }
 
     @RequestMapping(value = "/grid/collection", method = RequestMethod.GET)
