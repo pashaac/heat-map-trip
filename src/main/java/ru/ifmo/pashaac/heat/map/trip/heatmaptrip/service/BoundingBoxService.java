@@ -169,12 +169,12 @@ public class BoundingBoxService {
         List<ClusterableBoundingBox> clusterableBoundingBoxes = new ArrayList<>();
         for (int i = 0; i < boundingBoxes.size(); i++) {
             double rating = 0;
-            double count = 1;
+            double count = 0;
             int outerRadius = GeoEarthMathUtils.outerRadius(boundingBoxes.get(i));
             for (Venue venue : venues) {
                 if (GeoEarthMathUtils.contains(boundingBoxes.get(i), venue.getLocation())) {
                     rating += venue.getRating();
-                    count += 1;
+                    count += 0.5;
                     continue;
                 }
                 double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
@@ -184,7 +184,7 @@ public class BoundingBoxService {
                 }
 //              Possible find another formulas if scan git history of this file
             }
-            clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, rating / Math.sqrt(count), null));
+            clusterableBoundingBoxes.add(new ClusterableBoundingBox(i, count < 0.001 ? 0 : rating / Math.sqrt(count), null));
         }
 
         KMeansPlusPlusClusterer<ClusterableBoundingBox> clusterer = new KMeansPlusPlusClusterer<>(5, 10_000, new ClusterableBoundingBox(), new JDKRandomGenerator(), KMeansPlusPlusClusterer.EmptyClusterStrategy.LARGEST_POINTS_NUMBER);
