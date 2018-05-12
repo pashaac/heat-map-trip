@@ -188,16 +188,17 @@ public class BoundingBoxService {
             double rating = 0;
             double count = 0;
             int outerRadius = GeoEarthMathUtils.outerRadius(boundingBoxes.get(i));
+            int maxDistance = 3 * outerRadius;
             for (Venue venue : venues) {
                 if (GeoEarthMathUtils.contains(boundingBoxes.get(i), venue.getLocation())) {
                     rating += venue.getRating();
-                    count += 0.5;
+                    count += 1;
                     continue;
                 }
                 double distance = GeoEarthMathUtils.distance(GeoEarthMathUtils.center(boundingBoxes.get(i)), venue.getLocation());
-                if (distance < outerRadius * 3) {
-                    rating += venue.getRating() * (3 * outerRadius - distance) / outerRadius;
-                    count += (3 * outerRadius - distance) / outerRadius;
+                if (distance < maxDistance) {
+                    rating += venue.getRating() * (maxDistance - distance) / maxDistance;
+                    count += (maxDistance - distance) / maxDistance;
                 }
 //              Possible find another formulas if scan git history of this file
             }

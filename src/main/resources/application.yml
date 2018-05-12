@@ -126,7 +126,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
     hibernate:
-      ddl-auto: create-drop # (create, create-drop, update) schema will be automatically updated afresh for every start of application
+      ddl-auto: update # (create, create-drop, update) schema will be automatically updated afresh for every start of application
 #      naming:
 #        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
 #        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy

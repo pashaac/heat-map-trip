@@ -78,7 +78,8 @@ public class BoundingBoxController {
         log.info("Cell size: {} x {}", GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0))),
                 GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0))));
         List<Venue> venues = boundingBoxes.stream()
-                .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream())
+                .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream()
+                        .filter(venue -> venue.getRating() > 0))
                 .collect(Collectors.toList());
         log.info("Was found {} venues from categories: {}", venues.size(), categories);
         return venues;
