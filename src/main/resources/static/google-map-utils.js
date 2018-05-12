@@ -43,7 +43,7 @@ var googleRectangle = function (boundingBox, color) {
 var googleRectangleColored = function (boundingBox, color) {
     return new google.maps.Rectangle({
         strokeWeight: 0,
-        fillOpacity: 0.8,
+        fillOpacity: 0.85,
         fillColor: color,
         map: MAP_GOOGLE,
         bounds: boundingBox.bounds
@@ -89,7 +89,7 @@ var googleMarker = function (venue) {
 };
 
 
-var googleCircle = function (venue) {
+var googleVenueCircle = function (venue) {
     return new google.maps.Circle({
         strokeColor: 'red',
         strokeOpacity: 1,
@@ -99,5 +99,18 @@ var googleCircle = function (venue) {
         map: MAP_GOOGLE,
         center: {lat: venue.location.latitude, lng: venue.location.longitude},
         radius: 50
+    });
+};
+
+var googleMarkerCircle = function (marker) {
+    return new google.maps.Circle({
+        strokeColor: 'red',
+        strokeOpacity: 0.30,
+        strokeWeight: 1,
+        fillOpacity: 0.15,
+        fillColor: 'red',
+        map: MAP_GOOGLE,
+        center: {lat: marker.latitude, lng: marker.longitude},
+        radius: 100
     });
 };

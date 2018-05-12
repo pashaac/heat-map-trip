@@ -22,5 +22,8 @@ public class VenueCategoryConfigurationProperties {
 
     private List<Category> categories;
     private Double lowerRatingBound;
+    private Integer distributionArea;
+    private Integer distributionCount;
+    private Integer distributionIntersectionDistance;
 
 }

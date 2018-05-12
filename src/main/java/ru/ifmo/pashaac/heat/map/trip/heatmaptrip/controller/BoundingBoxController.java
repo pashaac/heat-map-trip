@@ -14,6 +14,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -91,14 +92,15 @@ public class BoundingBoxController {
         List<BoundingBox> gridBoundingBoxes = calculateGridCityBoundingBox(cityId, grid);
         List<Venue> venues = venueService.getVenues(venueIds);
         List<Venue> validVenues = venueService.venueValidation(venues);
-        double pleasure = boundingBoxService.calculateAveragePleasure(validVenues);
-        return boundingBoxService.smileClustering(validVenues, gridBoundingBoxes, pleasure);
+//        double pleasure = boundingBoxService.calculateAveragePleasure(validVenues);
+        return boundingBoxService.smileClustering(validVenues, gridBoundingBoxes, 0);
     }
 
     @RequestMapping(path = "/mine", method = RequestMethod.PUT)
     public List<Venue> repeatMineBoundingBoxVenues(@RequestParam @ApiParam(value = "BoundingBox id of search area", required = true) Long boundingBoxId) {
         BoundingBox boundingBox = boundingBoxService.getBoundingBox(boundingBoxId);
-        return venueService.quadTreeMine(boundingBox);
+        boundingBox.setValid(false);
+        return venueService.quadTreeMine(Collections.singletonList(boundingBox));
     }
 
 }

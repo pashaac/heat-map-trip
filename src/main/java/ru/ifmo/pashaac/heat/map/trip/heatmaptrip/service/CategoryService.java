@@ -1,5 +1,6 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  * Created by Pavel Asadchiy
  * on 17:50 05.04.18.
  */
+@Slf4j
 @Service
 public class CategoryService {
 
@@ -36,10 +38,24 @@ public class CategoryService {
                 .findFirst();
     }
 
+    Optional<Category> valueOfByKey(String key) {
+        return venueCategoryConfigurationProperties.getCategories().stream()
+                .filter(category -> category.getTitle().contains(key))
+                .findFirst();
+    }
+
     String googleApiCategories(String categories) {
         return map(unJoin(categories)).stream()
                 .flatMap(category -> category.getGoogleKeys().stream())
                 .collect(Collectors.joining("|")); // Google separator
+    }
+
+    String googleApiType(String bboxCategory) { // Contract like [Nature: park]
+        List<String> parts = unJoin(bboxCategory);
+        if (parts.size() > 1) {
+            log.warn("Google support only one type, following first category will be ignoring");
+        }
+        return parts.get(0).split(":\\s+")[1];
     }
 
     String foursquareApiCategories(String categories) {
@@ -64,7 +80,7 @@ public class CategoryService {
         return categories.stream().collect(Collectors.joining(", ", "[", "]"));
     }
 
-    private List<String> unJoin(String categories) {
+    public List<String> unJoin(String categories) {
         return Arrays.stream(categories.substring(1, categories.length() - 1).split(",\\s+"))
                 .map(String::trim)
                 .collect(Collectors.toList());

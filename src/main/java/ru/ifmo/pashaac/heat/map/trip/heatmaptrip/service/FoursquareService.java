@@ -11,6 +11,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.Foursq
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.VenueUtils;
 
 import java.util.*;
@@ -43,7 +44,8 @@ public class FoursquareService implements VenueMiner {
                 return Collections.emptyList();
             }
             String foursquareApiCategories = categoryService.foursquareApiCategories(boundingBox.getCategories());
-            List<CompactVenue> compactVenues = foursquareClient.apiCall(boundingBox, foursquareApiCategories);
+            GeoEarthMathUtils.center(boundingBox);
+            List<CompactVenue> compactVenues = foursquareClient.apiCall(GeoEarthMathUtils.center(boundingBox), GeoEarthMathUtils.outerRadius(boundingBox), foursquareConfigurationProperties.getVenueLimit(), foursquareApiCategories);
             log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), boundingBox.getCategories());
             Map<String, Set<String>> venueTypes = new HashMap<>();
             return compactVenues.stream()

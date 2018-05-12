@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.ColorMarker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
@@ -58,9 +59,28 @@ public class VenueService {
     }
 
     public List<Venue> apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
-        boundingBox.setSource(source);
-        boundingBox.setCategories(categoryService.join(categories));
-        return venueMinerIdentifier(source).apiMine(boundingBox).orElse(Collections.emptyList());
+        if (Source.FOURSQUARE == source) {
+            boundingBox.setSource(source);
+            boundingBox.setCategories(categoryService.join(categories));
+            return venueMinerIdentifier(source).apiMine(boundingBox).orElse(Collections.emptyList());
+        }
+        if (Source.GOOGLE == source) {
+            List<BoundingBox> boundingBoxes = categories.stream()
+                    .map(categoryService::valueOfByKey)
+                    .flatMap(category -> category.map(Category::getGoogleKeys).orElse(Collections.emptyList()).stream()
+                            .map(googleType -> {
+                                String categoryStr = category.map(Category::getTitle).orElse("UNKNOWN");
+                                String type = categoryStr + ": " + googleType;
+                                return new BoundingBox(boundingBox.getSouthWest(), boundingBox.getNorthEast(), Source.GOOGLE,
+                                        categoryService.join(Collections.singletonList(type)), boundingBox.getCity());
+                            }))
+                    .collect(Collectors.toList());
+            log.info("API mine for GOOGLE will be cost {} rest calls", boundingBoxes.size());
+            return boundingBoxes.stream()
+                    .flatMap(bbox -> venueMinerIdentifier(source).apiMine(bbox).orElse(Collections.emptyList()).stream())
+                    .collect(Collectors.toList());
+        }
+        throw new IllegalArgumentException("Incorrect source value = " + source);
     }
 
     private VenueMiner venueMinerIdentifier(Source source) {
@@ -85,34 +105,48 @@ public class VenueService {
         }
         City city = Optional.ofNullable(cityRepository.findOne(cityId))
                 .orElseThrow(() -> new IllegalArgumentException("No city with id = " + cityId));
-        BoundingBox boundingBox = city.getBoundingBox();
-        boundingBox.setSource(source);
-        boundingBox.setCategories(categoryService.join(categories));
-        BoundingBox savedBoundingBox = boundingBoxService.save(boundingBox);
-        log.info("Mining places for city {} by categories {} starting...", city.getCity(), categories);
-        return quadTreeMine(savedBoundingBox);
+        if (Source.FOURSQUARE == source) {
+            BoundingBox boundingBox = city.getBoundingBox();
+            boundingBox.setSource(source);
+            boundingBox.setCategories(categoryService.join(categories));
+            BoundingBox savedBoundingBox = boundingBoxService.save(boundingBox);
+            log.info("Mining places for city {} by source FOURSQUARE and categories {} starting...", city.getCity(), categories);
+            return quadTreeMine(Collections.singletonList(savedBoundingBox));
+        }
+        if (Source.GOOGLE == source) {
+            List<BoundingBox> boundingBoxes = categories.stream()
+                    .map(categoryService::valueOfByKey)
+                    .flatMap(category -> category.map(Category::getGoogleKeys).orElse(Collections.emptyList()).stream()
+                            .map(googleType -> {
+                                String categoryStr = category.map(Category::getTitle).orElse("UNKNOWN");
+                                String type = categoryStr + ": " + googleType;
+                                return new BoundingBox(city.getSouthWest(), city.getNorthEast(), Source.GOOGLE,
+                                        categoryService.join(Collections.singletonList(type)), city);
+                            }))
+                    .collect(Collectors.toList());
+            List<BoundingBox> savedBoundingBoxes = boundingBoxService.save(boundingBoxes);
+            log.info("Mining places for city {} by source GOOGLE and categories {} starting...", city.getCity(), categories);
+            return quadTreeMine(savedBoundingBoxes);
+        }
+        throw new IllegalArgumentException("Incorrect source value = " + source);
     }
 
-    public List<Venue> quadTreeMine(BoundingBox rootBoundingBox) {
-        if (Objects.isNull(rootBoundingBox.getSource())) {
-            log.warn("Bounding box has empty source information! Skip it!");
-            return Collections.emptyList();
-        }
-        if (rootBoundingBox.isValid()) {
-            log.warn("Bounding box has valid status flag! Skip it!");
-            return Collections.emptyList();
-        }
-
+    public List<Venue> quadTreeMine(List<BoundingBox> boundingBoxes) {
         long startTime = System.currentTimeMillis();
-        VenueMiner venueMiner = venueMinerIdentifier(rootBoundingBox.getSource());
-        Queue<BoundingBox> boxQueue = new ArrayDeque<>(Collections.singleton(rootBoundingBox));
         int ind = 0;
         int apiCallCounter = 0;
         List<Venue> venues = new ArrayList<>();
+        Queue<BoundingBox> boxQueue = new ArrayDeque<>(boundingBoxes);
         while (!boxQueue.isEmpty()) {
-            log.debug("Trying to get places for boundingBox #{}...", ind++);
             BoundingBox boundingBox = Optional.ofNullable(boxQueue.poll())
                     .orElseThrow(() -> new IllegalArgumentException("Null boundingBox during mining process"));
+            log.debug("Trying get places for boundingBox #{} in city {} ...", ind++, boundingBox.getCity().getCity());
+            if (Objects.isNull(boundingBox.getSource()) || boundingBox.isValid()) {
+                log.warn("Bounding box has empty source and already valid status! Skip it and remove!");
+                boundingBoxService.remove(boundingBox);
+                continue;
+            }
+            VenueMiner venueMiner = venueMinerIdentifier(boundingBox.getSource());
             Optional<List<Venue>> apiMinedBoundingBoxVenues = venueMiner.apiMine(boundingBox);
             ++apiCallCounter;
             if (!apiMinedBoundingBoxVenues.isPresent()) {
@@ -125,9 +159,9 @@ public class VenueService {
                 boxQueue.addAll(quarters);
                 continue;
             }
-            // Hack to have venues strongly inside bounding box
             List<Venue> boundingBoxVenues = apiMinedBoundingBoxVenues.get().stream()
                     .filter(venue -> GeoEarthMathUtils.contains(boundingBox, venue.getLocation()))
+                    .filter(venue -> venue.getRating() > 0)
                     .collect(Collectors.toList());
             BoundingBox savedBoundingBox = boundingBoxService.saveBoundingBoxWithVenues(boundingBox, boundingBoxVenues);
             venues.addAll(savedBoundingBox.getVenues());
@@ -135,12 +169,16 @@ public class VenueService {
         }
         log.info("API called approximately: {} times", apiCallCounter);
         log.info("Was searched {} venues", venues.size());
-        log.info("City area was scanned in {} ms to collect venues according to categories: {}", System.currentTimeMillis() - startTime, rootBoundingBox.getCategories());
+        List<String> collectedCategories = boundingBoxes.stream()
+                .flatMap(boundingBox -> categoryService.unJoin(boundingBox.getCategories()).stream())
+                .distinct()
+                .collect(Collectors.toList());
+        log.info("City area was scanned in {} ms to collect venues according to categories: {}", System.currentTimeMillis() - startTime, collectedCategories);
         return venues;
     }
 
     public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> categories) {
-//        TODO: Need try handle invalid boundingBoxes or not?
+//        TODO: Open questions about necessity handle invalid boundingBoxes in this function?
 //        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getValidBasedBoundingBoxes(cityId, source, categories, false);
 //        if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
 //            log.info("No invalid bounding boxes :) continue");
@@ -150,7 +188,6 @@ public class VenueService {
 //                    .peek(boundingBox -> log.info("Try mine data for boundingBox with id = {} from city = {}", boundingBox.getId(), boundingBox.getCity().getCity()))
 //                    .forEach(this::quadTreeMine);
 //        }
-
         List<Venue> venues = new ArrayList<>();
         List<String> emptyCategories = new ArrayList<>();
         for (String category : categories) {
@@ -170,13 +207,9 @@ public class VenueService {
         return venues;
     }
 
-    // TODO: need improvements in this algorithm / Use special filtering: invalidate all -> filtering -> set valid flag in db -> return
+    // TODO: Think about idea to use special filtering: invalidate all -> filtering -> set valid flag in db -> return
     public List<Venue> venueValidation(List<Venue> dirtyVenues) {
         long startTime = System.currentTimeMillis();
-//        List<Venue> venues = dirtyVenues.stream()
-//                .peek(venue -> venue.setValid(false))
-//                .collect(Collectors.toList());
-//        venues = venueRepository.save(venues); // invalidate all
         List<Venue> venues = dirtyVenues.stream()
                 .filter(venue -> Objects.nonNull(venue.getCategory()))
                 .filter(venue -> Character.isAlphabetic(venue.getTitle().charAt(0)))
@@ -189,9 +222,7 @@ public class VenueService {
                 .peek(entry -> log.info("Filtering {} venues from category {}", entry.getValue().size(), entry.getKey()))
                 .flatMap(entry -> entry.getValue().stream()
                         .filter(venue -> venue.getRating() > averageRating.get(venue.getCategory()) * venueCategoryConfigurationProperties.getLowerRatingBound()))
-//                .peek(venue -> venue.setValid(true))
                 .collect(Collectors.toList());
-//        venues = venueRepository.save(venues); // true valid flag for filtered venues
         log.info("After filtering become {} venues, filtering time = {} ms", venues.size(), (System.currentTimeMillis() - startTime));
 
         double minRatingValue = venues.stream().mapToDouble(Venue::getRating).min().orElse(0.0);
@@ -201,36 +232,47 @@ public class VenueService {
         return venues;
     }
 
-    // TODO: need improve this algorithm and inject properties
+    // TODO: Think about some algorithm improvements and inject properties
     public List<Marker> calculateVenuesDistribution(List<Venue> venues) {
         long startTime = System.currentTimeMillis();
+        Random angleRandom = new Random();
+        Random distanceRandom = new Random();
         List<Marker> markers = new ArrayList<>();
-        int levelMarkersCount = 7;
-        int levelMarkersAngle = 360;
-        int levelAreaPart = 70;
         for (Venue venue : venues) {
-            Random angleRandom = new Random();
-            Random distanceRandom = new Random();
-            double rating = venue.getRating();
             Marker location = venue.getLocation();
-            int ratingLevel = 0;
-            while (rating > 0) {
-                ratingLevel++;
-                int markersCount = rating < 1 ? (int) Math.round(rating * levelMarkersCount) : levelMarkersCount;
-                for (int i = 0; i < markersCount; i++) {
-                    int angle = angleRandom.nextInt(levelMarkersAngle);
-                    int distance = distanceRandom.nextInt(ratingLevel * levelAreaPart);
+            for (int i = 1; i <= Math.round(venue.getRating()); i++) {
+                for (int j = 0; j < venueCategoryConfigurationProperties.getDistributionCount() + i; j++) {
+                    int distance = distanceRandom.nextInt(i * venueCategoryConfigurationProperties.getDistributionArea());
+                    int angle = angleRandom.nextInt(360);
                     markers.add(GeoEarthMathUtils.markerOnRadialDistance(location, angle, distance));
                 }
-                rating -= 1.3;
             }
         }
-        log.info("Distribution process generate {} markers in {} ms based on {} venues ", markers.size(), (System.currentTimeMillis() - startTime), venues.size());
-        return markers;
+        log.info("Distribution process generate {} markers in {} ms based on {} venues", markers.size(), (System.currentTimeMillis() - startTime), venues.size());
+        log.info("Let's remove circles without intersections...");
+        startTime = System.currentTimeMillis();
+        List<Marker> intersectionMarkers = new ArrayList<>();
+        for (int i = 0; i < markers.size(); i++) {
+            int intersectionCount = 0;
+            boolean intersectionFlag = false;
+            for (int j = i + 1; j < markers.size(); j++) {
+                if (GeoEarthMathUtils.distance(markers.get(i), markers.get(j)) < venueCategoryConfigurationProperties.getDistributionIntersectionDistance()) {
+                    if (++intersectionCount == venueCategoryConfigurationProperties.getDistributionCount()) {
+                        intersectionFlag = true;
+                        break;
+                    }
+                }
+            }
+            if (intersectionFlag) {
+                intersectionMarkers.add(markers.get(i));
+            }
+        }
+        log.info("Distribution process after intersection filter provide {} markers in {} ms based on {} markers", intersectionMarkers.size(), (System.currentTimeMillis() - startTime), markers.size());
+        return intersectionMarkers;
     }
 
 
-    // TODO: Think about clustering ...
+    // Clustering with apache math library
     public List<ColorMarker> apacheMathClustering(List<Marker> markers) {
         DBSCANClusterer<ColorMarker> clusterer = new DBSCANClusterer<>(200, 40, new ColorMarker());
         List<Cluster<ColorMarker>> clusters = clusterer.cluster(markers.stream().map(ColorMarker::new).collect(Collectors.toList()));
@@ -249,6 +291,7 @@ public class VenueService {
         return points;
     }
 
+    // CLustering with smile clustering library
     public List<ColorMarker> smileClustering(List<Marker> markers) {
         ColorMarker[] array = markers.stream().map(ColorMarker::new).toArray(ColorMarker[]::new);
         Arrays.stream(array).limit(30).map(marker -> marker.getLatitude() + " " + marker.getLongitude()).forEach(System.out::println);

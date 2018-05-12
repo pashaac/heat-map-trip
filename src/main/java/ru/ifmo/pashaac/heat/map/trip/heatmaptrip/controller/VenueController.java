@@ -34,7 +34,7 @@ public class VenueController {
     @RequestMapping(path = "/client/api/call", method = RequestMethod.PUT)
     public List<Venue> getVenuesThroughClient(@RequestBody @ApiParam(value = "BoundingBox search area", required = true) BoundingBox boundingBox,
                                               @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
-                                              @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
+                                              @RequestParam @ApiParam(value = "Venues category  list", required = true) List<String> categories) {
         return venueService.apiMine(boundingBox, source, categories);
     }
 
@@ -51,11 +51,12 @@ public class VenueController {
         return venueService.venueValidation(venues);
     }
 
-    @RequestMapping(path = "/distribution", method = RequestMethod.GET)
+    @RequestMapping(path = "/distribution", method = RequestMethod.PUT)
     public List<Marker> createVenuesDistribution(@RequestBody @ApiParam(value = "Venue identifiers to validate", required = true) List<Long> venueIds) {
-        List<Venue> venues = venueService.getVenues(venueIds);
+        List<Venue> venues = validateVenues(venueIds);
+        log.info("Start calculate distribution based on {} venues", venues.size());
         List<Marker> markers = venueService.calculateVenuesDistribution(venues);
-        log.info("Was generated {} markers", markers.size());
+        log.info("Was generated {} markers to show data distribution", markers.size());
         return markers;
     }
 }

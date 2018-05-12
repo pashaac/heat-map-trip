@@ -62,9 +62,26 @@ public class BoundingBoxService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<BoundingBox> save(List<BoundingBox> boundingBoxes) {
+        return boundingBoxRepository.save(boundingBoxes);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void remove(BoundingBox boundingBox) {
+        boundingBoxRepository.delete(boundingBox);
+    }
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<BoundingBox> splitBoundingBox(BoundingBox boundingBox) {
         boundingBoxRepository.delete(boundingBox);
         return boundingBoxRepository.save(GeoEarthMathUtils.getQuarters(boundingBox));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<BoundingBox> replaceBoundingBox(BoundingBox boundingBox, List<BoundingBox> children) {
+        boundingBoxRepository.delete(boundingBox);
+        return boundingBoxRepository.save(children);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -203,6 +220,9 @@ public class BoundingBoxService {
         clusterableBoundingBoxes.clear();
         for (int i = 0; i < sortedCenters.size(); i++) {
             String color = colors.get(i);
+            if (String.format("#%02x%02x%02x", Color.gray.getRed(), Color.gray.getGreen(), Color.gray.getBlue()).equals(color)) {
+                continue;
+            }
             Double center = sortedCenters.get(i);
             for (CentroidCluster<ClusterableBoundingBox> cluster : clusters) {
                 if (Math.abs(cluster.getCenter().getPoint()[0] - center) < 0.001) {

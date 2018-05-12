@@ -24,16 +24,14 @@ public class InvalidBoundingBoxScheduler {
         this.venueService = venueService;
     }
 
-    @Scheduled(fixedRate = 1000 * 60 * 10) // TODO uncomment before production
+    @Scheduled(fixedRate = 1000 * 60 * 10)
     public void schedulerInvalidBoundingBoxes() {
         log.info("Scheduler wake up to check unhandled invalid bounding boxes...");
         List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getTotalInvalidBoundingBoxes();
         if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
-            log.info("No invalid bounding boxes :) do nothing");
+            log.info("Good news! No invalid bounding boxes :)");
             return;
         }
-        invalidBoundingBoxes.stream()
-                .peek(boundingBox -> log.info("Try mine data for boundingBox with id = {} from city = {}", boundingBox.getId(), boundingBox.getCity().getCity()))
-                .forEach(venueService::quadTreeMine);
+        venueService.quadTreeMine(invalidBoundingBoxes);
     }
 }

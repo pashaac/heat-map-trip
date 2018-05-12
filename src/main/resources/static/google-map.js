@@ -66,6 +66,7 @@ function googleMapClearInitialization() {
             $("#google-map-heat-map-slider").prop("disabled", true);
         }
         $("#google-map-grid-heat-map-button").prop("disabled", true);
+        $("#map-show-venues-distribution-button").prop("disabled", true);
     });
     $mapClearButton.dblclick(function () {
         $mapClearButton.trigger("click");               // clear all
@@ -73,6 +74,7 @@ function googleMapClearInitialization() {
         MAP_HEAT_MAP.data = [];
         MAP_HEAT_MAP.update();
         gridHeatMapBoundingBoxes = clearMapCollection(gridHeatMapBoundingBoxes);
+        venueCircles = clearMapCollection(venueCircles);
     })
 }
 

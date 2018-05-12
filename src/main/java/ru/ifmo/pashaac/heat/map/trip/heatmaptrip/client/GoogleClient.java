@@ -40,16 +40,16 @@ public class GoogleClient {
         return GeocodingApi.geocode(googleGeoApiContext, address).await();
     }
 
-    private PlacesSearchResponse nearbySearchCall(Marker center, int radius, String categories) throws InterruptedException, ApiException, IOException {
+    private PlacesSearchResponse nearbySearchCall(Marker center, int radius, String type) throws InterruptedException, ApiException, IOException {
         return PlacesApi.nearbySearchQuery(googleGeoApiContext, new LatLng(center.getLatitude(), center.getLongitude()))
                 .radius(radius)
                 .language("ru")
-                .custom("types", categories)
+                .custom("type", type)
                 .await();
     }
 
-    public List<PlacesSearchResult> apiCall(Marker center, int radius, String categories) throws InterruptedException, ApiException, IOException {
-        PlacesSearchResponse searchResponse = nearbySearchCall(center, radius, categories);
+    public List<PlacesSearchResult> apiCall(Marker center, int radius, String type) throws InterruptedException, ApiException, IOException {
+        PlacesSearchResponse searchResponse = nearbySearchCall(center, radius, type);
         return Arrays.asList(searchResponse.results);
     }
 

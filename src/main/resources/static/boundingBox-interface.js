@@ -71,12 +71,16 @@ function googleMapGridHeatMapInitialization() {
         var grid = $("#google-map-grid-slider").val();
         var params = jQuery.param({cityId: city.id, grid: grid});
 
+        if (venues.length === 0) {
+            return;
+        }
         var venuesIds = venues.map(function (venue) { return venue.id;  });
+
+        $("#venues-spinner").prop("active", true);
         $.put("/boundingboxes/grid/heat/map?" + params, JSON.stringify(venuesIds), function (clusterBoundingBoxes) {
             jQuery.each(clusterBoundingBoxes, function (i, clusterBoundingBox) {
-                if (clusterBoundingBox.color !== '#808080') {
-                    gridHeatMapBoundingBoxes.push(googleRectangleColored(gridBoundingBoxes[clusterBoundingBox.id], clusterBoundingBox.color));
-                }
+                gridHeatMapBoundingBoxes.push(googleRectangleColored(gridBoundingBoxes[clusterBoundingBox.id], clusterBoundingBox.color));
+                $("#venues-spinner").prop("active", false);
             });
         });
 
