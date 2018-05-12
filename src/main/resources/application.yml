@@ -9,7 +9,7 @@ google:
     connect-timeout: 3000
     requests-limit: 10
     venue-limit: 20
-    call-fail-delay: 1500
+    call-fail-delay: 3000
 
 
 # ===============================
@@ -21,7 +21,7 @@ foursquare:
     client-secret: 2ARYMHXILVTZXYSLZL5THOPWK1OGGIQW03FFRWYG52OCBMRK
     redirect-url:
     venue-limit: 30
-    call-fail-delay: 1500
+    call-fail-delay: 3000
 
 # ===============================
 # = Venue Source Categories

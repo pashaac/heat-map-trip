@@ -105,9 +105,9 @@ var googleVenueCircle = function (venue) {
 var googleMarkerCircle = function (marker) {
     return new google.maps.Circle({
         strokeColor: 'red',
-        strokeOpacity: 0.30,
+        strokeOpacity: 0.15,
         strokeWeight: 1,
-        fillOpacity: 0.15,
+        fillOpacity: 0.10,
         fillColor: 'red',
         map: MAP_GOOGLE,
         center: {lat: marker.latitude, lng: marker.longitude},
