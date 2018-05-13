@@ -14,6 +14,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +41,7 @@ public class BoundingBoxController {
     public List<BoundingBox> getInvalidBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
                                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        return boundingBoxService.getValidBasedBoundingBoxes(cityId, source, categories, false);
+        return boundingBoxService.getBoundingBoxes(cityId, source, categories, false);
     }
 
     @RequestMapping(value = "/valid", method = RequestMethod.GET)
@@ -48,7 +49,21 @@ public class BoundingBoxController {
     public List<BoundingBox> getSuccessBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
                                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        return boundingBoxService.getValidBasedBoundingBoxes(cityId, source, categories, true);
+        List<BoundingBox> boundingBoxes = boundingBoxService.getBoundingBoxes(cityId, source, categories, true);
+        List<BoundingBox> uniqueBoundingBoxes = new ArrayList<>();
+        for (int i = 0; i < boundingBoxes.size(); i++) {
+            boolean match = false;
+            for (int j = i + 1; j < boundingBoxes.size(); j++) {
+                if (GeoEarthMathUtils.equalsShapes(boundingBoxes.get(i), boundingBoxes.get(j))) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                uniqueBoundingBoxes.add(boundingBoxes.get(i));
+            }
+        }
+        return uniqueBoundingBoxes;
     }
 
     @RequestMapping(value = "/grid", method = RequestMethod.GET)
@@ -59,8 +74,9 @@ public class BoundingBoxController {
             throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
         }
         List<BoundingBox> boundingBoxes = boundingBoxService.gridBoundingBox(cityId, grid);
-        log.info("Cell size: {} x {}", GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0))),
-                GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0))));
+        double width = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0)));
+        double height = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0)));
+        log.info("Approximately cell size: {} x {}", width, height);
         return boundingBoxes;
     }
 
@@ -70,18 +86,18 @@ public class BoundingBoxController {
                                              @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) Integer grid,
                                              @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                              @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        if (Objects.isNull(grid) || grid < 1) {
+        if (grid < 1) {
             throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
         }
         List<BoundingBox> boundingBoxes = boundingBoxService.gridBoundingBox(cityId, grid);
-        log.info("Bounding boxes count: {}", boundingBoxes.size());
-        log.info("Cell size: {} x {}", GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0))),
-                GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0))));
+        double width = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0)));
+        double height = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0)));
+        log.info("Approximately cell size: {} x {}", width, height);
         List<Venue> venues = boundingBoxes.stream()
                 .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream()
                         .filter(venue -> venue.getRating() > 0))
                 .collect(Collectors.toList());
-        log.info("Was found {} venues from categories: {}", venues.size(), categories);
+        log.info("Was found {} venues with positive rating from categories: {}", venues.size(), categories);
         return venues;
     }
 

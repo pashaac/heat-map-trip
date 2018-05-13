@@ -31,7 +31,7 @@ public class VenueController {
         this.venueService = venueService;
     }
 
-    @RequestMapping(path = "/client/api/call", method = RequestMethod.PUT)
+    @RequestMapping(path = "/api/call", method = RequestMethod.PUT)
     public List<Venue> getVenuesThroughClient(@RequestBody @ApiParam(value = "BoundingBox search area", required = true) BoundingBox boundingBox,
                                               @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                               @RequestParam @ApiParam(value = "Venues category  list", required = true) List<String> categories) {

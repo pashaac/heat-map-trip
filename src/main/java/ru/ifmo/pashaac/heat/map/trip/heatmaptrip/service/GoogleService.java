@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.client.GoogleClient;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.GoogleConfigurationProperties;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.Venue;
@@ -35,13 +34,11 @@ public class GoogleService implements VenueMiner {
 
     private final GoogleClient googleClient;
     private final GoogleConfigurationProperties googleConfigurationProperties;
-    private final CategoryService categoryService;
 
     @Autowired
-    public GoogleService(GoogleClient googleClient, GoogleConfigurationProperties googleConfigurationProperties, CategoryService categoryService) {
+    public GoogleService(GoogleClient googleClient, GoogleConfigurationProperties googleConfigurationProperties) {
         this.googleClient = googleClient;
         this.googleConfigurationProperties = googleConfigurationProperties;
-        this.categoryService = categoryService;
     }
 
     GeocodingResult[] reverseGeocode(Marker location) {
@@ -67,15 +64,14 @@ public class GoogleService implements VenueMiner {
     @Override
     public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            if (StringUtils.isEmpty(boundingBox.getCategories())) {
-                log.warn("Empty categories array is incorrect, skip it");
+            if (StringUtils.isEmpty(boundingBox.getCategory()) || StringUtils.isEmpty(boundingBox.getType())) {
+                log.warn("Empty category or type are not supported, skip it");
                 return Collections.emptyList();
             }
             Marker center = GeoEarthMathUtils.center(boundingBox);
             int radius = GeoEarthMathUtils.outerRadius(boundingBox);
-            String googleApiType = categoryService.googleApiType(boundingBox.getCategories());
-            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, googleApiType); // Google supports only one category
-            log.info("Google API call return {} venues according to categories: {}", placesSearchResults.size(), boundingBox.getCategories());
+            List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, boundingBox.getType()); // Google supports only one category
+            log.info("Google API call return {} venues according to category {} and type {}", placesSearchResults.size(), boundingBox.getCategory(), boundingBox.getType());
             return placesSearchResults.stream()
                     .map(venue -> {
 
@@ -92,20 +88,15 @@ public class GoogleService implements VenueMiner {
                                         + "\tRating: %s",
                                 venue.placeId, venue.icon, Arrays.toString(venue.types), venue.vicinity, venue.rating));
 
-
-                        for (String type : venue.types) {
-                            if (googleApiType.equals(type)) {
-                                gVenue.setCategory(categoryService.valueOfByGoogleKey(type).map(Category::getTitle).orElse(null));
-                                gVenue.setType(type);
-                            }
-                        }
-
+                        Arrays.stream(venue.types)
+                                .filter(type -> boundingBox.getType().equals(type))
+                                .findFirst().ifPresent($ -> gVenue.setValid(true));
                         gVenue.setBoundingBox(boundingBox);
 
                         if (log.isDebugEnabled()) {
                             String debugCategoriesStr = Arrays.stream(venue.types)
                                     .collect(Collectors.joining("|", "[", "]"));
-                            log.debug("Venue: {}, {}, rating {}, category: {}", gVenue.getTitle(), debugCategoriesStr, gVenue.getRating(), gVenue.getCategory());
+                            log.debug("Venue: {}, {}, rating {}, category: {}", gVenue.getTitle(), debugCategoriesStr, gVenue.getRating(), boundingBox.getCategory());
                         }
                         return gVenue;
                     })

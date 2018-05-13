@@ -68,6 +68,7 @@ function googleMapShowVenuesButtonInitialization() {
                 $("#google-map-heat-map-slider").prop("disabled", false);
                 $("#google-map-grid-heat-map-button").prop("disabled", false);
                 $("#map-show-venues-distribution-button").prop("disabled", false);
+                $("#map-show-venues-quad-tree-grid-button").prop("disabled", false);
                 $("#venues-spinner").prop("active", false);
                 button.disabled = false;
 

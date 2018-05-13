@@ -21,7 +21,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -47,12 +46,9 @@ public class BoundingBoxService {
         return boundingBoxRepository.findBoundingBoxesByValidIsFalse();
     }
 
-    public List<BoundingBox> getValidBasedBoundingBoxes(Long cityId, Source source, List<String> categories, boolean valid) {
-        Map<Long, BoundingBox> boundingBoxMap = categories.stream()
-                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndSourceAndCategoriesContainsAndValid(cityId, source, category, valid).stream())
-                .collect(Collectors.toMap(BoundingBox::getId, bbox -> bbox, (b1, b2) -> b1));
-        return boundingBoxMap.entrySet().stream()
-                .map(Map.Entry::getValue)
+    public List<BoundingBox> getBoundingBoxes(Long cityId, Source source, List<String> categories, boolean valid) {
+        return categories.stream()
+                .flatMap(category -> boundingBoxRepository.findBoundingBoxesByCity_IdAndSourceAndCategoryAndValid(cityId, source, category, valid).stream())
                 .collect(Collectors.toList());
     }
 
@@ -161,6 +157,7 @@ public class BoundingBoxService {
                 boundingBoxes.add(new BoundingBox(southWest, northEast));
             }
         }
+        log.info("During GRID process was generated {} bounding boxes", boundingBoxes.size());
         return boundingBoxes;
     }
 

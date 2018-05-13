@@ -11,6 +11,6 @@ import java.util.List;
 @Transactional
 @Repository
 public interface BoundingBoxRepository extends JpaRepository<BoundingBox, Long>  {
-    List<BoundingBox> findBoundingBoxesByCity_IdAndSourceAndCategoriesContainsAndValid(Long cityId, Source source, String category, boolean valid);
+    List<BoundingBox> findBoundingBoxesByCity_IdAndSourceAndCategoryAndValid(Long cityId, Source source, String category, boolean valid);
     List<BoundingBox> findBoundingBoxesByValidIsFalse();
 }

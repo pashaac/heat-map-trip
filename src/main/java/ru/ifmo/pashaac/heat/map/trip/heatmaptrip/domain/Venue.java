@@ -17,7 +17,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"title", "latitude", "longitude", "type"}))
+@Table
 public class Venue {
 
     @Id
@@ -32,10 +32,6 @@ public class Venue {
             @AttributeOverride(name = "longitude", column = @Column(name = "longitude")),
     })
     private Marker location;
-
-    private String category;
-
-    private String type;
 
     private double rating;
 

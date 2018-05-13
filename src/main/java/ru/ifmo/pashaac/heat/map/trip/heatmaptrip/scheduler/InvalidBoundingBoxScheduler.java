@@ -2,7 +2,6 @@ package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.scheduler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
@@ -24,7 +23,7 @@ public class InvalidBoundingBoxScheduler {
         this.venueService = venueService;
     }
 
-    @Scheduled(fixedRate = 1000 * 60 * 10)
+//    @Scheduled(fixedRate = 1000 * 60 * 10)
     public void schedulerInvalidBoundingBoxes() {
         log.info("Scheduler wake up to check unhandled invalid bounding boxes...");
         List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getTotalInvalidBoundingBoxes();

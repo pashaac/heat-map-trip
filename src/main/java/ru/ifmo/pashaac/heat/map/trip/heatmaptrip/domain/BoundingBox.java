@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 
@@ -21,8 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"southWestLatitude", "southWestLongitude",
-        "northEastLatitude", "northEastLongitude", "source", "categories"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"southWestLatitude", "southWestLongitude", "northEastLatitude", "northEastLongitude", "source", "category", "type"}))
 public class BoundingBox {
 
     @Id
@@ -46,10 +46,9 @@ public class BoundingBox {
     @Enumerated(EnumType.STRING)
     private Source source;
 
-//    @ElementCollection
-//    @CollectionTable(name = "bounding_box_category", joinColumns = @JoinColumn(name = "id", referencedColumnName = "id"))
-//    @Column(name = "category")
-    private String categories; // joined list of categories
+    private String category;
+
+    private String type;
 
     private boolean valid;
 
@@ -61,11 +60,31 @@ public class BoundingBox {
     @OneToMany(targetEntity = Venue.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "boundingBox")
     private List<Venue> venues = new ArrayList<>();
 
-    public BoundingBox(Marker southWest, Marker northEast, Source source, String categories, City city) {
+
+    public BoundingBox(City city, Source source, Category category, String type) {
+        this.southWest = city.getSouthWest();
+        this.northEast = city.getNorthEast();
+        this.source = source;
+        this.category = category.getTitle();
+        this.type = type;
+        this.city = city;
+    }
+
+    public BoundingBox(BoundingBox boundingBox, Source source, Category category, String type) {
+        this.southWest = boundingBox.getSouthWest();
+        this.northEast = boundingBox.getNorthEast();
+        this.source = source;
+        this.category = category.getTitle();
+        this.type = type;
+        this.city = boundingBox.getCity();
+    }
+
+    public BoundingBox(Marker southWest, Marker northEast, Source source, String category, String type, City city) {
         this.southWest = southWest;
         this.northEast = northEast;
-        this.categories = categories;
         this.source = source;
+        this.category = category;
+        this.type = type;
         this.city = city;
     }
 

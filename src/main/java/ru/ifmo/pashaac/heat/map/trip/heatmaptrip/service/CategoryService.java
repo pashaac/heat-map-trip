@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
+import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
 
 import java.util.Arrays;
 import java.util.List;
@@ -75,6 +76,17 @@ public class CategoryService {
                 .filter(category -> categories.contains(category.getTitle()))
                 .collect(Collectors.toList());
     }
+
+    public List<String> getCategoryTypes(Category category, Source source) {
+        if (Source.FOURSQUARE == source) {
+            return category.getFoursquareKeys();
+        }
+        if (Source.GOOGLE == source) {
+            return category.getGoogleKeys();
+        }
+        throw new IllegalArgumentException("Incorrect source value = " + source);
+    }
+
 
     String join(List<String> categories) {
         return categories.stream().collect(Collectors.joining(", ", "[", "]"));

@@ -67,6 +67,7 @@ function googleMapClearInitialization() {
         }
         $("#google-map-grid-heat-map-button").prop("disabled", true);
         $("#map-show-venues-distribution-button").prop("disabled", true);
+        $("#map-show-venues-quad-tree-grid-button").prop("disabled", true);
     });
     $mapClearButton.dblclick(function () {
         $mapClearButton.trigger("click");               // clear all

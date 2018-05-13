@@ -20,7 +20,8 @@ foursquare:
     client-id: PQDUHRGQ3LRAIQBMC5VJZTR0ZENNBYO03Q1ERFXXG1HI0Y1S
     client-secret: 2ARYMHXILVTZXYSLZL5THOPWK1OGGIQW03FFRWYG52OCBMRK
     redirect-url:
-    venue-limit: 30
+    venue-limit: 35
+    venue-limit-max: 50
     call-fail-delay: 3000
 
 # ===============================
@@ -79,6 +80,7 @@ venue:
         - 52e81612bcbc57f1066b7a38 # Town Hall
         - 4bf58dd8d48988d126941735 # Government Building
         - 4bf58dd8d48988d12a941735 # Capitol Building
+#        - 4bf58dd8d48988d12d941735 # Monument / Landmark
         - 4bf58dd8d48988d1df941735 # Bridge
     -
       title: Nature

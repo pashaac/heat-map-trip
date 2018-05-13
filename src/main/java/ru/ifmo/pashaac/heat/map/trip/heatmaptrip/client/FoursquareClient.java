@@ -24,7 +24,7 @@ import java.util.Map;
 @Component
 public class FoursquareClient {
 
-    public static final String SEARCH_INTENT = "browse";
+    private static final String SEARCH_INTENT = "browse";
 
     private final FoursquareApi foursquareApi;
 

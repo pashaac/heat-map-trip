@@ -23,6 +23,12 @@ jQuery.each(["put", "delete"], function (i, method) {
     };
 });
 
+function clearMapCollection(collection) {
+    collection.forEach(function (element) {
+        element.setMap(null);
+    });
+    return [];
+}
 
 var googleRectangle = function (boundingBox, color) {
     return new google.maps.Rectangle({

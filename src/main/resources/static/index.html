@@ -72,6 +72,7 @@
 </paper-card>
 <paper-button id="map-clear-button" raised>Clean Map</paper-button>
 <paper-button id="map-show-venues-button" raised>Show Places</paper-button>
+<paper-button id="map-show-venues-quad-tree-grid-button" raised disabled>+ 4-Tree Grid</paper-button>
 <paper-button id="map-show-venues-distribution-button" raised disabled>+ Distribution</paper-button>
 <paper-spinner id="venues-spinner"></paper-spinner>
 
@@ -85,6 +86,7 @@
 
     googleMapClearInitialization();
     googleMapShowVenuesButtonInitialization();
+    googleMapShowVenuesQuadTreeGridButtonInitialization();
     googleMapShowVenuesDistributionButtonInitialization();
     googleMapGridHeatMapInitialization();
 

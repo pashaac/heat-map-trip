@@ -2,8 +2,8 @@
 var gridBoundingBoxes = [];
 var gridHeatMapBoundingBoxes = [];
 var invalidBoundingBoxes = [];
-var validBoundingBoxes = [];
 var invalidBoundingBoxesXXX = [];
+var quadTreeGridBoundingBoxes = [];
 
 function googleMapGridSliderInitialization() {
     $("#google-map-grid-slider").change(function () {
@@ -29,17 +29,11 @@ function googleMapGridSliderInitialization() {
     });
 }
 
-function clearMapCollection(collection) {
-    collection.forEach(function (element) {
-        element.setMap(null);
-    });
-    return [];
-}
-
 function clearAnyBoundingBoxes() {
     gridBoundingBoxes = clearMapCollection(gridBoundingBoxes);
     invalidBoundingBoxes = clearMapCollection(invalidBoundingBoxes);
     invalidBoundingBoxesXXX = clearMapCollection(invalidBoundingBoxesXXX);
+    quadTreeGridBoundingBoxes = clearMapCollection(quadTreeGridBoundingBoxes);
 }
 
 function showInvalidBoundingBoxes(city, categories, source) {
@@ -52,12 +46,21 @@ function showInvalidBoundingBoxes(city, categories, source) {
     });
 }
 
-function showValidBoundingBoxes(city, categories, source) {
-    var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
-    $.get("http://localhost:8080" + "/boundingboxes/valid?" + params, function (boundingBoxes) {
-        boundingBoxes.forEach(function (boundingBox) {
-            validBoundingBoxes.push(googleRectangle(boundingBox, 'green'));
-        })
+function googleMapShowVenuesQuadTreeGridButtonInitialization() {
+    $("#map-show-venues-quad-tree-grid-button").click(function () {
+        if (venues.length === 0) {
+            return;
+        }
+        var city = JSON.parse(sessionStorage.getItem(MAP_CITY_KEY));
+        var categories = $("#google-map-venue-category").val();
+        var source = $("#google-map-venue-source").val();
+
+        var params = jQuery.param({cityId: city.id, source: source.toUpperCase(), categories: categories.join(',')});
+        $.get("http://localhost:8080" + "/boundingboxes/valid?" + params, function (boundingBoxes) {
+            boundingBoxes.forEach(function (boundingBox) {
+                quadTreeGridBoundingBoxes.push(googleRectangle(boundingBox, 'green'));
+            })
+        });
     });
 }
 
@@ -83,14 +86,5 @@ function googleMapGridHeatMapInitialization() {
                 $("#venues-spinner").prop("active", false);
             });
         });
-
-        // $.get("http://localhost:8080" + "/boundingboxes/grid/heat/map?" + params, function (colors) {
-        //     $("#map-clear-button").trigger("dbclick");
-        //     jQuery.each(colors, function (i, color) {
-        //         if (color !== null) {
-        //             griBoundingBoxesColored.push(googleRectangleColored(gridBoundingBoxes[i], color))
-        //         }
-        //     });
-        // });
     })
 }

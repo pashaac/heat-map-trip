@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.configuration.properties.VenueCategoryConfigurationProperties;
-import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Category;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.ColorMarker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Marker;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.data.Source;
@@ -59,28 +58,14 @@ public class VenueService {
     }
 
     public List<Venue> apiMine(BoundingBox boundingBox, Source source, List<String> categories) {
-        if (Source.FOURSQUARE == source) {
-            boundingBox.setSource(source);
-            boundingBox.setCategories(categoryService.join(categories));
-            return venueMinerIdentifier(source).apiMine(boundingBox).orElse(Collections.emptyList());
-        }
-        if (Source.GOOGLE == source) {
-            List<BoundingBox> boundingBoxes = categories.stream()
-                    .map(categoryService::valueOfByKey)
-                    .flatMap(category -> category.map(Category::getGoogleKeys).orElse(Collections.emptyList()).stream()
-                            .map(googleType -> {
-                                String categoryStr = category.map(Category::getTitle).orElse("UNKNOWN");
-                                String type = categoryStr + ": " + googleType;
-                                return new BoundingBox(boundingBox.getSouthWest(), boundingBox.getNorthEast(), Source.GOOGLE,
-                                        categoryService.join(Collections.singletonList(type)), boundingBox.getCity());
-                            }))
-                    .collect(Collectors.toList());
-            log.info("API mine for GOOGLE will be cost {} rest calls", boundingBoxes.size());
-            return boundingBoxes.stream()
-                    .flatMap(bbox -> venueMinerIdentifier(source).apiMine(bbox).orElse(Collections.emptyList()).stream())
-                    .collect(Collectors.toList());
-        }
-        throw new IllegalArgumentException("Incorrect source value = " + source);
+        List<BoundingBox> boundingBoxes = categoryService.map(categories).stream()
+                .flatMap(category -> categoryService.getCategoryTypes(category, source).stream()
+                        .map(type -> new BoundingBox(boundingBox, source, category, type)))
+                .collect(Collectors.toList());
+        log.info("API mine for {} source will be cost {} rest calls", source, boundingBoxes.size());
+        return boundingBoxes.stream()
+                .flatMap(bbox -> venueMinerIdentifier(source).apiMine(bbox).orElse(Collections.emptyList()).stream())
+                .collect(Collectors.toList());
     }
 
     private VenueMiner venueMinerIdentifier(Source source) {
@@ -95,40 +80,18 @@ public class VenueService {
     }
 
     private List<Venue> quadTreeMine(Long cityId, Source source, List<String> categories) {
-        if (Objects.isNull(source)) {
-            log.warn("Null source impossible! Skip it!");
-            return Collections.emptyList();
-        }
-        if (CollectionUtils.isEmpty(categories)) {
-            log.warn("Categories list to collect is empty! Skip it!");
+        if (Objects.isNull(source) || CollectionUtils.isEmpty(categories)) {
+            log.warn("QuadTreeMine impossible for null source or empty list categories, skip it!");
             return Collections.emptyList();
         }
         City city = Optional.ofNullable(cityRepository.findOne(cityId))
                 .orElseThrow(() -> new IllegalArgumentException("No city with id = " + cityId));
-        if (Source.FOURSQUARE == source) {
-            BoundingBox boundingBox = city.getBoundingBox();
-            boundingBox.setSource(source);
-            boundingBox.setCategories(categoryService.join(categories));
-            BoundingBox savedBoundingBox = boundingBoxService.save(boundingBox);
-            log.info("Mining places for city {} by source FOURSQUARE and categories {} starting...", city.getCity(), categories);
-            return quadTreeMine(Collections.singletonList(savedBoundingBox));
-        }
-        if (Source.GOOGLE == source) {
-            List<BoundingBox> boundingBoxes = categories.stream()
-                    .map(categoryService::valueOfByKey)
-                    .flatMap(category -> category.map(Category::getGoogleKeys).orElse(Collections.emptyList()).stream()
-                            .map(googleType -> {
-                                String categoryStr = category.map(Category::getTitle).orElse("UNKNOWN");
-                                String type = categoryStr + ": " + googleType;
-                                return new BoundingBox(city.getSouthWest(), city.getNorthEast(), Source.GOOGLE,
-                                        categoryService.join(Collections.singletonList(type)), city);
-                            }))
-                    .collect(Collectors.toList());
-            List<BoundingBox> savedBoundingBoxes = boundingBoxService.save(boundingBoxes);
-            log.info("Mining places for city {} by source GOOGLE and categories {} starting...", city.getCity(), categories);
-            return quadTreeMine(savedBoundingBoxes);
-        }
-        throw new IllegalArgumentException("Incorrect source value = " + source);
+        List<BoundingBox> boundingBoxes = categoryService.map(categories).stream()
+                .flatMap(category -> categoryService.getCategoryTypes(category, source).stream()
+                        .map(type -> new BoundingBox(city, source, category, type)))
+                .collect(Collectors.toList());
+        log.info("Mining places for city {} by source {} and categories {} starting...", city.getCity(), source, categories);
+        return quadTreeMine(boundingBoxService.save(boundingBoxes));
     }
 
     public List<Venue> quadTreeMine(List<BoundingBox> boundingBoxes) {
@@ -138,11 +101,16 @@ public class VenueService {
         List<Venue> venues = new ArrayList<>();
         Queue<BoundingBox> boxQueue = new ArrayDeque<>(boundingBoxes);
         while (!boxQueue.isEmpty()) {
-            BoundingBox boundingBox = Optional.ofNullable(boxQueue.poll())
-                    .orElseThrow(() -> new IllegalArgumentException("Null boundingBox during mining process"));
-            log.debug("Trying get places for boundingBox #{} in city {} ...", ind++, boundingBox.getCity().getCity());
-            if (Objects.isNull(boundingBox.getSource()) || boundingBox.isValid()) {
-                log.warn("Bounding box has empty source and already valid status! Skip it and remove!");
+            BoundingBox boundingBox = boxQueue.poll();
+            if (boundingBox == null) {
+                log.warn("Impossible case, but queue already empty...");
+                break;
+            }
+            ind++;
+            log.debug("Trying mine places for boundingBox #{} in city {} by source {} and category {} and type {}  ...", ind,
+                    boundingBox.getCity().getCity(), boundingBox.getSource(), boundingBox.getCategory(), boundingBox.getType());
+            if (Objects.isNull(boundingBox.getSource()) || Objects.isNull(boundingBox.getCategory()) || Objects.isNull(boundingBox.getType()) || boundingBox.isValid()) {
+                log.warn("Bounding box has empty source or category or type or valid status, skip it and remove!");
                 boundingBoxService.remove(boundingBox);
                 continue;
             }
@@ -150,11 +118,11 @@ public class VenueService {
             Optional<List<Venue>> apiMinedBoundingBoxVenues = venueMiner.apiMine(boundingBox);
             ++apiCallCounter;
             if (!apiMinedBoundingBoxVenues.isPresent()) {
-                log.warn("API mine call failed... Stop collection process! Scheduler will handle this area later...");
+                log.warn("API mine call failed... Collection for this bounding box is stopped! Scheduler will handle this area later...");
                 continue;
             }
             if (venueMiner.isReachTheLimit(apiMinedBoundingBoxVenues.get())) {
-                log.debug("Split bounding box due to {} API client return max amount of venues", boundingBox.getSource());
+                log.debug("Split bounding box #{} on quarters due to max amount of venues from API client", ind);
                 List<BoundingBox> quarters = boundingBoxService.splitBoundingBox(boundingBox);
                 boxQueue.addAll(quarters);
                 continue;
@@ -165,21 +133,21 @@ public class VenueService {
                     .collect(Collectors.toList());
             BoundingBox savedBoundingBox = boundingBoxService.saveBoundingBoxWithVenues(boundingBox, boundingBoxVenues);
             venues.addAll(savedBoundingBox.getVenues());
-            log.info("Was searched: {} {} venues", boundingBoxVenues.size(), boundingBox.getSource());
+            log.info("Was searched: {} {} venues with positive rating", boundingBoxVenues.size(), boundingBox.getSource());
         }
         log.info("API called approximately: {} times", apiCallCounter);
-        log.info("Was searched {} venues", venues.size());
-        List<String> collectedCategories = boundingBoxes.stream()
-                .flatMap(boundingBox -> categoryService.unJoin(boundingBox.getCategories()).stream())
+        log.info("Was searched {} venues with positive rating", venues.size());
+        String categories = boundingBoxes.stream()
+                .map(BoundingBox::getCategory)
                 .distinct()
-                .collect(Collectors.toList());
-        log.info("City area was scanned in {} ms to collect venues according to categories: {}", System.currentTimeMillis() - startTime, collectedCategories);
+                .collect(Collectors.joining(",", "[", "]"));
+        log.info("City area was scanned in {} ms to collect venues according to categories: {}", System.currentTimeMillis() - startTime, categories);
         return venues;
     }
 
     public List<Venue> quadTreeMineIfNeeded(Long cityId, Source source, List<String> categories) {
 //        TODO: Open questions about necessity handle invalid boundingBoxes in this function?
-//        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getValidBasedBoundingBoxes(cityId, source, categories, false);
+//        List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getBoundingBoxes(cityId, source, categories, false);
 //        if (CollectionUtils.isEmpty(invalidBoundingBoxes)) {
 //            log.info("No invalid bounding boxes :) continue");
 //        } else {
@@ -189,20 +157,19 @@ public class VenueService {
 //                    .forEach(this::quadTreeMine);
 //        }
         List<Venue> venues = new ArrayList<>();
-        List<String> emptyCategories = new ArrayList<>();
+        List<String> categoriesToMine = new ArrayList<>();
         for (String category : categories) {
-            List<BoundingBox> categoryContainsBoundingBoxes = boundingBoxService.getValidBasedBoundingBoxes(cityId, source, Collections.singletonList(category), true);
-            if (CollectionUtils.isEmpty(categoryContainsBoundingBoxes)) {
-                emptyCategories.add(category);
+            List<BoundingBox> boundingBoxes = boundingBoxService.getBoundingBoxes(cityId, source, Collections.singletonList(category), true);
+            if (CollectionUtils.isEmpty(boundingBoxes)) {
+                categoriesToMine.add(category);
                 continue;
             }
-            List<Venue> categoryVenues = categoryContainsBoundingBoxes.stream()
+            List<Venue> categoryVenues = boundingBoxes.stream()
                     .flatMap(boundingBox -> boundingBox.getVenues().stream())
-                    .filter(venue -> category.equals(venue.getCategory()))
                     .collect(Collectors.toList());
             venues.addAll(categoryVenues);
         }
-        List<Venue> quadTreeMinedVenues = quadTreeMine(cityId, source, emptyCategories);
+        List<Venue> quadTreeMinedVenues = quadTreeMine(cityId, source, categoriesToMine);
         venues.addAll(quadTreeMinedVenues);
         return venues;
     }
@@ -211,17 +178,17 @@ public class VenueService {
     public List<Venue> venueValidation(List<Venue> dirtyVenues) {
         long startTime = System.currentTimeMillis();
         List<Venue> venues = dirtyVenues.stream()
-                .filter(venue -> Objects.nonNull(venue.getCategory()))
+                .filter(Venue::isValid)
                 .filter(venue -> Character.isAlphabetic(venue.getTitle().charAt(0)))
                 .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
                 .collect(Collectors.toList());
 
-        Map<String, List<Venue>> groupedVenues = venues.stream().collect(Collectors.groupingBy(Venue::getCategory));
-        Map<String, Double> averageRating = venues.stream().collect(Collectors.groupingBy(Venue::getCategory, Collectors.averagingDouble(Venue::getRating)));
+        Map<String, List<Venue>> groupedVenues = venues.stream().collect(Collectors.groupingBy(venue -> venue.getBoundingBox().getCategory()));
+        Map<String, Double> averageRating = venues.stream().collect(Collectors.groupingBy(venue -> venue.getBoundingBox().getCategory(), Collectors.averagingDouble(Venue::getRating)));
         venues = groupedVenues.entrySet().stream()
                 .peek(entry -> log.info("Filtering {} venues from category {}", entry.getValue().size(), entry.getKey()))
                 .flatMap(entry -> entry.getValue().stream()
-                        .filter(venue -> venue.getRating() > averageRating.get(venue.getCategory()) * venueCategoryConfigurationProperties.getLowerRatingBound()))
+                        .filter(venue -> venue.getRating() > averageRating.get(venue.getBoundingBox().getCategory()) * venueCategoryConfigurationProperties.getLowerRatingBound()))
                 .collect(Collectors.toList());
         log.info("After filtering become {} venues, filtering time = {} ms", venues.size(), (System.currentTimeMillis() - startTime));
 

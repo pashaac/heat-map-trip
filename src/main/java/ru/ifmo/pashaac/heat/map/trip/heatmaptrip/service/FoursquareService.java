@@ -39,15 +39,14 @@ public class FoursquareService implements VenueMiner {
     @Override
     public List<Venue> apiCall(BoundingBox boundingBox) {
         try {
-            if (StringUtils.isEmpty(boundingBox.getCategories())) {
-                log.warn("Empty categories array is incorrect, skip it");
+            if (StringUtils.isEmpty(boundingBox.getCategory()) || StringUtils.isEmpty(boundingBox.getType())) {
+                log.warn("Empty category or type are not supported, skip it");
                 return Collections.emptyList();
             }
-            String foursquareApiCategories = categoryService.foursquareApiCategories(boundingBox.getCategories());
             GeoEarthMathUtils.center(boundingBox);
-            List<CompactVenue> compactVenues = foursquareClient.apiCall(GeoEarthMathUtils.center(boundingBox), GeoEarthMathUtils.outerRadius(boundingBox), foursquareConfigurationProperties.getVenueLimit(), foursquareApiCategories);
-            log.info("Foursquare API call return {} venues according to categories: {}", compactVenues.size(), boundingBox.getCategories());
-            Map<String, Set<String>> venueTypes = new HashMap<>();
+            List<CompactVenue> compactVenues = foursquareClient.apiCall(GeoEarthMathUtils.center(boundingBox),
+                    GeoEarthMathUtils.outerRadius(boundingBox), foursquareConfigurationProperties.getVenueLimitMax(), boundingBox.getType());
+            log.info("Foursquare API call return {} venues according to category {} and type {}", compactVenues.size(), boundingBox.getCategory(), boundingBox.getType());
             return compactVenues.stream()
                     .map(venue -> {
                         Venue fVenue = new Venue();
@@ -72,27 +71,11 @@ public class FoursquareService implements VenueMiner {
                                 venue.getContact().getFacebook(), venue.getId(), address, venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
                                 venue.getStats().getUsersCount(), venue.getStats().getTipCount()));
 
-                        List<String> validTypes = Arrays.stream(venue.getCategories())
+                        Arrays.stream(venue.getCategories())
                                 .filter(Objects::nonNull)
                                 .map(Category::getId)
-                                .filter(foursquareApiCategories::contains)
-                                .collect(Collectors.toList());
-
-
-                        for (String validType : validTypes) {
-                            categoryService.valueOfByFoursquareKey(validType).ifPresent(category -> {
-                                venueTypes.putIfAbsent(fVenue.getTitle(), new HashSet<>());
-                                Set<String> types = venueTypes.get(fVenue.getTitle());
-                                if (!types.contains(validType)) {
-                                    types.add(validType);
-                                    fVenue.setCategory(category.getTitle());
-                                    fVenue.setType(validType);
-                                }
-                            });
-                            if (!StringUtils.isEmpty(fVenue.getType())) {
-                                break;
-                            }
-                        }
+                                .filter(id -> boundingBox.getType().equals(id))
+                                .findFirst().ifPresent($ -> fVenue.setValid(true));
 
                         fVenue.setBoundingBox(boundingBox);
 
@@ -100,7 +83,7 @@ public class FoursquareService implements VenueMiner {
                             String debugCategoriesStr = Arrays.stream(venue.getCategories())
                                     .map(category -> category.getName() + " - " + category.getId())
                                     .collect(Collectors.joining("|", "[", "]"));
-                            log.debug("Venue: {}, {}, rating {}, category: {}", fVenue.getTitle(), debugCategoriesStr, fVenue.getRating(), fVenue.getCategory());
+                            log.debug("Venue: {}, {}, rating {}, category: {}", fVenue.getTitle(), debugCategoriesStr, fVenue.getRating(), boundingBox.getCategory());
                         }
 
                         return fVenue;

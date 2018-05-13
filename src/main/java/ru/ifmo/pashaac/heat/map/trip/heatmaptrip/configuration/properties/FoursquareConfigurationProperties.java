@@ -22,6 +22,7 @@ public class FoursquareConfigurationProperties {
     private String redirectUrl;
 
     private Integer venueLimit;
+    private Integer venueLimitMax;
     private Integer callFailDelay;
 
 }

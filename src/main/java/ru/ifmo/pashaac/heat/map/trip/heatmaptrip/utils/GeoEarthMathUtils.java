@@ -59,21 +59,21 @@ public class GeoEarthMathUtils {
     }
 
     private static BoundingBox leftUpBoundingBox(BoundingBox box) {
-        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)), box.getSource(), box.getCategories(), box.getCity());
+        return new BoundingBox(getNorthWest(leftDownBoundingBox(box)), getNorthWest(rightUpBoundingBox(box)), box.getSource(), box.getCategory(), box.getType(), box.getCity());
     }
 
     private static BoundingBox leftDownBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(box.getSouthWest(), center, box.getSource(), box.getCategories(), box.getCity());
+        return new BoundingBox(box.getSouthWest(), center, box.getSource(), box.getCategory(), box.getType(), box.getCity());
     }
 
     private static BoundingBox rightUpBoundingBox(BoundingBox box) {
         Marker center = center(box);
-        return new BoundingBox(center, box.getNorthEast(), box.getSource(), box.getCategories(), box.getCity());
+        return new BoundingBox(center, box.getNorthEast(), box.getSource(), box.getCategory(), box.getType(), box.getCity());
     }
 
     private static BoundingBox rightDownBoundingBox(BoundingBox box) {
-        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)), box.getSource(), box.getCategories(), box.getCity());
+        return new BoundingBox(getSouthEast(leftDownBoundingBox(box)), getSouthEast(rightUpBoundingBox(box)), box.getSource(), box.getCategory(), box.getType(), box.getCity());
     }
 
     public static List<BoundingBox> getQuarters(BoundingBox box) {
@@ -85,4 +85,12 @@ public class GeoEarthMathUtils {
         return (int) (0.5 * (distance(box.getSouthWest(), median) + distance(box.getNorthEast(), median)));
     }
 
+    public static boolean equalsShapes(BoundingBox box1, BoundingBox box2) {
+        return equalsMarkers(box1.getSouthWest(), box2.getSouthWest()) && equalsMarkers(box1.getNorthEast(), box2.getNorthEast());
+    }
+
+    private static boolean equalsMarkers(Marker m1, Marker m2) {
+        double eps = 0.0001;
+        return Math.abs(m1.getLatitude() - m2.getLatitude()) < eps && Math.abs(m1.getLongitude() - m2.getLongitude()) < eps;
+    }
 }
