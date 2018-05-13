@@ -20,7 +20,7 @@ foursquare:
     client-id: PQDUHRGQ3LRAIQBMC5VJZTR0ZENNBYO03Q1ERFXXG1HI0Y1S
     client-secret: 2ARYMHXILVTZXYSLZL5THOPWK1OGGIQW03FFRWYG52OCBMRK
     redirect-url:
-    venue-limit: 35
+    venue-limit: 30
     venue-limit-max: 50
     call-fail-delay: 3000
 
