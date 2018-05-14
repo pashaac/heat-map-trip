@@ -86,16 +86,9 @@ public class BoundingBoxController {
                                              @RequestParam @ApiParam(value = "Grid row/col cells count", required = true) Integer grid,
                                              @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                              @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        if (grid < 1) {
-            throw new IllegalArgumentException("Grid cells count in row or column should be number which more then zero");
-        }
-        List<BoundingBox> boundingBoxes = boundingBoxService.gridBoundingBox(cityId, grid);
-        double width = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getSouthEast(boundingBoxes.get(0)));
-        double height = GeoEarthMathUtils.distance(boundingBoxes.get(0).getSouthWest(), GeoEarthMathUtils.getNorthWest(boundingBoxes.get(0)));
-        log.info("Approximately cell size: {} x {}", width, height);
+        List<BoundingBox> boundingBoxes = calculateGridCityBoundingBox(cityId, grid);
         List<Venue> venues = boundingBoxes.stream()
-                .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream()
-                        .filter(venue -> venue.getRating() > 0))
+                .flatMap(boundingBox -> venueService.apiMine(boundingBox, source, categories).stream())
                 .collect(Collectors.toList());
         log.info("Was found {} venues with positive rating from categories: {}", venues.size(), categories);
         return venues;

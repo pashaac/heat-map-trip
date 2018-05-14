@@ -63,8 +63,11 @@ public class VenueService {
                         .map(type -> new BoundingBox(boundingBox, source, category, type)))
                 .collect(Collectors.toList());
         log.info("API mine for {} source will be cost {} rest calls", source, boundingBoxes.size());
+        VenueMiner venueMiner = venueMinerIdentifier(source);
         return boundingBoxes.stream()
-                .flatMap(bbox -> venueMinerIdentifier(source).apiMine(bbox).orElse(Collections.emptyList()).stream())
+                .flatMap(bbox -> venueMiner.apiMine(bbox).orElse(Collections.emptyList()).stream()
+                        .filter(venue -> GeoEarthMathUtils.contains(boundingBox, venue.getLocation()))
+                        .filter(venue -> venue.getRating() > 0))
                 .collect(Collectors.toList());
     }
 
@@ -182,7 +185,7 @@ public class VenueService {
                 .filter(venue -> Character.isAlphabetic(venue.getTitle().charAt(0)))
                 .filter(venue -> Character.isUpperCase(venue.getTitle().charAt(0)))
                 .collect(Collectors.toList());
-
+        log.info("Base filter by title, before {} venues, after {} venues", dirtyVenues.size(), venues.size());
         Map<String, List<Venue>> groupedVenues = venues.stream().collect(Collectors.groupingBy(venue -> venue.getBoundingBox().getCategory()));
         Map<String, Double> averageRating = venues.stream().collect(Collectors.groupingBy(venue -> venue.getBoundingBox().getCategory(), Collectors.averagingDouble(Venue::getRating)));
         venues = groupedVenues.entrySet().stream()

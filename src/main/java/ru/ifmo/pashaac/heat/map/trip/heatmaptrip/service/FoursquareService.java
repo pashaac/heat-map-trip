@@ -48,6 +48,7 @@ public class FoursquareService implements VenueMiner {
                     GeoEarthMathUtils.outerRadius(boundingBox), foursquareConfigurationProperties.getVenueLimitMax(), boundingBox.getType());
             log.info("Foursquare API call return {} venues according to category {} and type {}", compactVenues.size(), boundingBox.getCategory(), boundingBox.getType());
             return compactVenues.stream()
+                    .limit(foursquareConfigurationProperties.getVenueLimit())
                     .map(venue -> {
                         Venue fVenue = new Venue();
                         fVenue.setTitle(VenueUtils.quotation(venue.getName()));
@@ -117,7 +118,7 @@ public class FoursquareService implements VenueMiner {
 
     @Override
     public boolean isReachTheLimit(List<Venue> venues) {
-        return venues.size() >= foursquareConfigurationProperties.getVenueLimit();
+        return venues.size() == foursquareConfigurationProperties.getVenueLimit();
     }
 
 }

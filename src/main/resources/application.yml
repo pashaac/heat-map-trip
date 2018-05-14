@@ -50,7 +50,6 @@ venue:
         - 4bf58dd8d48988d136941735 # Opera House
         - 4bf58dd8d48988d1e2931735 # Art Gallery
         - 52e81612bcbc57f1066b79ed # Outdoor Sculpture
-        - 4bf58dd8d48988d12d941735 # Monument / Landmark
         - 52e81612bcbc57f1066b7a32 # Cultural Center
         - 50aaa49e4b90af0d42d5de11 # Castle
         - 4deefb944765f83613cdba6e # Historic Site
@@ -80,7 +79,7 @@ venue:
         - 52e81612bcbc57f1066b7a38 # Town Hall
         - 4bf58dd8d48988d126941735 # Government Building
         - 4bf58dd8d48988d12a941735 # Capitol Building
-#        - 4bf58dd8d48988d12d941735 # Monument / Landmark
+        - 4bf58dd8d48988d12d941735 # Monument / Landmark
         - 4bf58dd8d48988d1df941735 # Bridge
     -
       title: Nature

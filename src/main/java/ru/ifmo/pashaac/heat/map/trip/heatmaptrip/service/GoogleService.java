@@ -73,6 +73,7 @@ public class GoogleService implements VenueMiner {
             List<PlacesSearchResult> placesSearchResults = googleClient.apiCall(center, radius, boundingBox.getType()); // Google supports only one category
             log.info("Google API call return {} venues according to category {} and type {}", placesSearchResults.size(), boundingBox.getCategory(), boundingBox.getType());
             return placesSearchResults.stream()
+                    .limit(googleConfigurationProperties.getVenueLimit())
                     .map(venue -> {
 
                         Venue gVenue = new Venue();
@@ -129,7 +130,7 @@ public class GoogleService implements VenueMiner {
 
     @Override
     public boolean isReachTheLimit(List<Venue> venues) {
-        return venues.size() >= googleConfigurationProperties.getVenueLimit();
+        return venues.size() == googleConfigurationProperties.getVenueLimit();
     }
 
 }
