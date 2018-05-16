@@ -129,7 +129,7 @@ public class GoogleService implements VenueMiner {
     }
 
     @Override
-    public boolean isReachTheLimit(List<Venue> venues) {
+    public <T> boolean isReachTheLimit(List<T> venues) {
         return venues.size() == googleConfigurationProperties.getVenueLimit();
     }
 

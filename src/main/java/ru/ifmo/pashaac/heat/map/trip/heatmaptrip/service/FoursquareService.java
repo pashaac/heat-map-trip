@@ -1,6 +1,7 @@
 package ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service;
 
 import fi.foyt.foursquare.api.FoursquareApiException;
+import fi.foyt.foursquare.api.Result;
 import fi.foyt.foursquare.api.entities.Category;
 import fi.foyt.foursquare.api.entities.CompactVenue;
 import lombok.extern.slf4j.Slf4j;
@@ -47,53 +48,73 @@ public class FoursquareService implements VenueMiner {
             List<CompactVenue> compactVenues = foursquareClient.apiCall(GeoEarthMathUtils.center(boundingBox),
                     GeoEarthMathUtils.outerRadius(boundingBox), foursquareConfigurationProperties.getVenueLimitMax(), boundingBox.getType());
             log.info("Foursquare API call return {} venues according to category {} and type {}", compactVenues.size(), boundingBox.getCategory(), boundingBox.getType());
-            return compactVenues.stream()
+            compactVenues = compactVenues.stream()
                     .limit(foursquareConfigurationProperties.getVenueLimit())
-                    .map(venue -> {
-                        Venue fVenue = new Venue();
-                        fVenue.setTitle(VenueUtils.quotation(venue.getName()));
-                        fVenue.setLocation(new Marker(venue.getLocation().getLat(), venue.getLocation().getLng()));
-                        fVenue.setRating(venue.getStats().getCheckinsCount());
-                        String address = String.format("%s, %s, %s", venue.getLocation().getCountry(), venue.getLocation().getCity(), venue.getLocation().getAddress());
-                        fVenue.setDescription(String.format("Contact info:\n"
-                                        + "\t - Phone: %s\n"
-                                        + "\t - E-mail: %s\n"
-                                        + "\t - Twitter: %s\n"
-                                        + "\t - Facebook: %s\n"
-                                        + "\t - Id: %s\n"
-                                        + "\t - Address: %s\n"
-                                        + "URL: %s\n"
-                                        + "Statistic info:\n"
-                                        + "\t - Rating: %s\n"
-                                        + "\t - Checkins: %s\n"
-                                        + "\t - Users: %s\n"
-                                        + "\t - Tip: %s\n",
-                                venue.getContact().getFormattedPhone(), venue.getContact().getEmail(), venue.getContact().getTwitter(),
-                                venue.getContact().getFacebook(), venue.getId(), address, venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
-                                venue.getStats().getUsersCount(), venue.getStats().getTipCount()));
-
-                        Arrays.stream(venue.getCategories())
-                                .filter(Objects::nonNull)
-                                .map(Category::getId)
-                                .filter(id -> boundingBox.getType().equals(id))
-                                .findFirst().ifPresent($ -> fVenue.setValid(true));
-
-                        fVenue.setBoundingBox(boundingBox);
-
-                        if (log.isDebugEnabled()) {
-                            String debugCategoriesStr = Arrays.stream(venue.getCategories())
-                                    .map(category -> category.getName() + " - " + category.getId())
-                                    .collect(Collectors.joining("|", "[", "]"));
-                            log.debug("Venue: {}, {}, rating {}, category: {}", fVenue.getTitle(), debugCategoriesStr, fVenue.getRating(), boundingBox.getCategory());
-                        }
-
-                        return fVenue;
-                    })
                     .collect(Collectors.toList());
+            if (isReachTheLimit(compactVenues)) {
+                return compactVenues.stream()
+                        .map(venue -> map(venue, boundingBox))
+                        .collect(Collectors.toList());
+            }
+
+            List<Venue> apiCallVenues = new ArrayList<>();
+            for (CompactVenue venue : compactVenues) {
+                Venue fVenue = map(venue, boundingBox);
+                try {
+                    Result<CompactVenue> result = foursquareClient.apiCallDetails(venue.getId());
+                    fVenue.setRating(Optional.ofNullable(result.getResult().getRating()).orElse(0.0));
+                } catch (FoursquareApiException e) {
+                    log.error("Foursquare API venues details service temporary unavailable or reject call, message {}", e.getMessage());
+                    fVenue.setRating(0.0);
+                }
+                apiCallVenues.add(fVenue);
+            }
+            return apiCallVenues;
         } catch (FoursquareApiException e) {
             log.error("Foursquare API service temporary unavailable or reject call, message {}", e.getMessage());
             throw new RuntimeException("Foursquare API service temporary unavailable");
         }
+    }
+
+    private Venue map(CompactVenue venue, BoundingBox boundingBox) {
+        Venue fVenue = new Venue();
+        fVenue.setTitle(VenueUtils.quotation(venue.getName()));
+        fVenue.setLocation(new Marker(venue.getLocation().getLat(), venue.getLocation().getLng()));
+        fVenue.setRating(venue.getStats().getCheckinsCount());
+        String address = String.format("%s, %s, %s", venue.getLocation().getCountry(), venue.getLocation().getCity(), venue.getLocation().getAddress());
+//        fVenue.setDescription(String.format("Contact info:\n"
+//                        + "\t - Phone: %s\n"
+//                        + "\t - E-mail: %s\n"
+//                        + "\t - Twitter: %s\n"
+//                        + "\t - Facebook: %s\n"
+//                        + "\t - Id: %s\n"
+//                        + "\t - Address: %s\n"
+//                        + "URL: %s\n"
+//                        + "Statistic info:\n"
+//                        + "\t - Rating: %s\n"
+//                        + "\t - Checkins: %s\n"
+//                        + "\t - Users: %s\n"
+//                        + "\t - Tip: %s\n",
+//                venue.getContact().getFormattedPhone(), venue.getContact().getEmail(), venue.getContact().getTwitter(),
+//                venue.getContact().getFacebook(), venue.getId(), address, venue.getUrl(), venue.getRating(), venue.getStats().getCheckinsCount(),
+//                venue.getStats().getUsersCount(), venue.getStats().getTipCount()));
+
+        Arrays.stream(venue.getCategories())
+                .filter(Objects::nonNull)
+                .map(Category::getId)
+                .filter(id -> boundingBox.getType().equals(id))
+                .findFirst().ifPresent($ -> fVenue.setValid(true));
+
+        fVenue.setBoundingBox(boundingBox);
+
+        if (log.isDebugEnabled()) {
+            String debugCategoriesStr = Arrays.stream(venue.getCategories())
+                    .map(category -> category.getName() + " - " + category.getId())
+                    .collect(Collectors.joining("|", "[", "]"));
+            log.debug("Venue: {}, {}, rating {}, category: {}", fVenue.getTitle(), debugCategoriesStr, fVenue.getRating(), boundingBox.getCategory());
+        }
+
+        return fVenue;
     }
 
     @Override
@@ -117,7 +138,7 @@ public class FoursquareService implements VenueMiner {
     }
 
     @Override
-    public boolean isReachTheLimit(List<Venue> venues) {
+    public <T> boolean isReachTheLimit(List<T> venues) {
         return venues.size() == foursquareConfigurationProperties.getVenueLimit();
     }
 

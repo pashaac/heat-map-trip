@@ -53,4 +53,8 @@ public class FoursquareClient {
         return Arrays.asList(venuesSearchResult.getResult().getVenues());
     }
 
+    public Result<CompactVenue> apiCallDetails(String venueId) throws FoursquareApiException {
+        return foursquareApi.venue(venueId);
+    }
+
 }

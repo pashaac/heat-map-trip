@@ -51,7 +51,7 @@ dependencies {
 	compile "com.google.maps:google-maps-services:${googleLibVersion}"
 
 	// Foursquare
-	compile files('src/main/resources/libs/foursquare/foursquare-api-1.0.7.jar')
+	compile files('src/main/resources/libs/foursquare/foursquare-api-1.0.4.3-RELEASE.jar')
 
 	// Swagger
 	compile "io.springfox:springfox-swagger2:${swaggerVersion}"

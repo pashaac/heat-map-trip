@@ -17,6 +17,6 @@ public interface VenueMiner {
 
     Optional<List<Venue>> apiMine(BoundingBox boundingBox);
 
-    boolean isReachTheLimit(List<Venue> venues);
+    <T> boolean isReachTheLimit(List<T> venues);
 
 }

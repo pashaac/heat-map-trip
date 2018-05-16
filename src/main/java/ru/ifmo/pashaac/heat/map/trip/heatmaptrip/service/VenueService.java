@@ -225,7 +225,7 @@ public class VenueService {
         for (int i = 0; i < markers.size(); i++) {
             int intersectionCount = 0;
             boolean intersectionFlag = false;
-            for (int j = i + 1; j < markers.size(); j++) {
+            for (int j = 0; j < markers.size(); j++) {
                 if (GeoEarthMathUtils.distance(markers.get(i), markers.get(j)) < venueCategoryConfigurationProperties.getDistributionIntersectionDistance()) {
                     if (++intersectionCount == venueCategoryConfigurationProperties.getDistributionCount()) {
                         intersectionFlag = true;
