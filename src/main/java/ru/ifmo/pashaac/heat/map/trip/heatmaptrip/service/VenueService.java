@@ -219,26 +219,26 @@ public class VenueService {
             }
         }
         log.info("Distribution process generate {} markers in {} ms based on {} venues", markers.size(), (System.currentTimeMillis() - startTime), venues.size());
-        log.info("Let's remove circles without intersections...");
-        startTime = System.currentTimeMillis();
-        List<Marker> intersectionMarkers = new ArrayList<>();
-        for (int i = 0; i < markers.size(); i++) {
-            int intersectionCount = 0;
-            boolean intersectionFlag = false;
-            for (int j = 0; j < markers.size(); j++) {
-                if (GeoEarthMathUtils.distance(markers.get(i), markers.get(j)) < venueCategoryConfigurationProperties.getDistributionIntersectionDistance()) {
-                    if (++intersectionCount == venueCategoryConfigurationProperties.getDistributionCount()) {
-                        intersectionFlag = true;
-                        break;
-                    }
-                }
-            }
-            if (intersectionFlag) {
-                intersectionMarkers.add(markers.get(i));
-            }
-        }
-        log.info("Distribution process after intersection filter provide {} markers in {} ms based on {} markers", intersectionMarkers.size(), (System.currentTimeMillis() - startTime), markers.size());
-        return intersectionMarkers;
+//        log.info("Let's remove circles without intersections...");
+//        startTime = System.currentTimeMillis();
+//        List<Marker> intersectionMarkers = new ArrayList<>();
+//        for (int i = 0; i < markers.size(); i++) {
+//            int intersectionCount = 0;
+//            boolean intersectionFlag = false;
+//            for (int j = 0; j < markers.size(); j++) {
+//                if (GeoEarthMathUtils.distance(markers.get(i), markers.get(j)) < venueCategoryConfigurationProperties.getDistributionIntersectionDistance()) {
+//                    if (++intersectionCount == venueCategoryConfigurationProperties.getDistributionCount()) {
+//                        intersectionFlag = true;
+//                        break;
+//                    }
+//                }
+//            }
+//            if (intersectionFlag) {
+//                intersectionMarkers.add(markers.get(i));
+//            }
+//        }
+//        log.info("Distribution process after intersection filter provide {} markers in {} ms based on {} markers", intersectionMarkers.size(), (System.currentTimeMillis() - startTime), markers.size());
+        return markers;
     }
 
 
