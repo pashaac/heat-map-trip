@@ -3,6 +3,21 @@
 * Completely independent service with UI interface
 * Tourist sphere analyze helper
 
+## Usage ## 
+
+- Clone project 
+- Go to src/main/resources/static
+    - Run ```bower install```
+- Configure PostgreSQL database connection according to application.yml from stc/main/resources
+    ```
+    url: jdbc:postgresql://localhost:5432/heat-map-trip
+    username: postgres
+    password: postgres
+   ```
+   Or update application.yml
+- Run from root ```gradle bootRun``` 
+- Ready! Please visit ```localhost:8080``` and take enjoy :)         
+
 ## Technologies ## 
 
 - [x] Java 8
@@ -19,16 +34,15 @@
 - [x] WebComponents
 - [x] Material design
 - [x] Google Polymer
-     
-- [ ] Monitoring (*Glowroot*)
+- [x] Monitoring (*Glowroot*)
     - [ ] Rest calls
-    - [ ] Heap
-    - [ ] CPU
+    - [x] Heap
+    - [x] CPU
     - [ ] DB 
    
         
 ## Notes ##
-Строим полный граф на всех объектах, суммируем расстояния, суммируем все рейтинги, берем среднее расстояние и делим. 
+- Строим полный граф на всех объектах, суммируем расстояния, суммируем все рейтинги, берем среднее расстояние и делим. 
 
 ## Technical usage ## 
 1. Description about installation and bla-bla-bla         
@@ -43,4 +57,6 @@
     - [x] Introduce several abstraction layers (OOP)
 - [x] API visualization based on Swagger framework    
 - [x] Migrate to jQuery functionality interface
-- [ ] Add spinner and disabled feature 
+- [x] Add spinner and disabled feature 
+- [ ] Another features... 
+- [ ] ... 
