@@ -31,15 +31,15 @@ public class City {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "latitude", column = @Column(name = "southWestLatitude")),
-            @AttributeOverride(name = "longitude", column = @Column(name = "southWestLongitude")),
+            @AttributeOverride(name = "latitude", column = @Column(name = "southWestLatitude", precision = 7)),
+            @AttributeOverride(name = "longitude", column = @Column(name = "southWestLongitude", precision = 7)),
     })
     private Marker southWest;
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "latitude", column = @Column(name = "northEastLatitude")),
-            @AttributeOverride(name = "longitude", column = @Column(name = "northEastLongitude")),
+            @AttributeOverride(name = "latitude", column = @Column(name = "northEastLatitude", precision = 7)),
+            @AttributeOverride(name = "longitude", column = @Column(name = "northEastLongitude", precision = 7)),
     })
     private Marker northEast;
 
