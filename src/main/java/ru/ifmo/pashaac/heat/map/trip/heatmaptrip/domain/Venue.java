@@ -28,8 +28,8 @@ public class Venue {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "latitude", column = @Column(name = "latitude")),
-            @AttributeOverride(name = "longitude", column = @Column(name = "longitude")),
+            @AttributeOverride(name = "latitude", column = @Column(name = "latitude", precision = 7)),
+            @AttributeOverride(name = "longitude", column = @Column(name = "longitude", precision = 7)),
     })
     private Marker location;
 
