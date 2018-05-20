@@ -17,8 +17,8 @@ google:
 # ===============================
 foursquare:
   api:
-    client-id: PK4UECUOHXWWS44NSKSM4ZLEATH0L5YG01Q0VMPJU1PAADTH
-    client-secret: NX1VDSOD1RQGXQA1XNOKXI3D201HWJENVRSP1QBJH2G4TWCZ
+    client-id: 1BEJKX2UNVYNBCMDPZX503HTUMHSLP24LETYNGWIYHKECZKT
+    client-secret: YWBQZLOUIEF0JHOBRDXGCC5EORBKAX0CDEKMWCLYIZZOVTH5
     redirect-url:
     venue-limit: 30
     venue-limit-max: 50

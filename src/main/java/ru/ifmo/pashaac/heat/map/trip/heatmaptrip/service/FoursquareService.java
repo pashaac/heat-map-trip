@@ -62,6 +62,11 @@ public class FoursquareService implements VenueMiner {
                 Venue fVenue = map(venue, boundingBox);
                 try {
                     Result<CompactVenue> result = foursquareClient.apiCallDetails(venue.getId());
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(20);
+                    } catch (InterruptedException e) {
+                        log.warn("Foursquare API venues details thread sleep was interrupted, message {}", e.getMessage());
+                    }
                     fVenue.setRating(Optional.ofNullable(result.getResult().getRating()).orElse(0.0));
                 } catch (FoursquareApiException e) {
                     log.error("Foursquare API venues details service temporary unavailable or reject call, message {}", e.getMessage());
