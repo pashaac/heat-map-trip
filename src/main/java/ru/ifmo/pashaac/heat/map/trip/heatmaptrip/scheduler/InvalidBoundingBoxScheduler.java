@@ -24,7 +24,7 @@ public class InvalidBoundingBoxScheduler {
         this.venueService = venueService;
     }
 
-    @Scheduled(fixedRate = 1000 * 60 * 10)
+    @Scheduled(fixedRate = 1000 * 60 * 90)
     public void schedulerInvalidBoundingBoxes() {
         log.info("Scheduler wake up to check unhandled invalid bounding boxes...");
         List<BoundingBox> invalidBoundingBoxes = boundingBoxService.getTotalInvalidBoundingBoxes();
