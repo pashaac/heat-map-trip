@@ -9,6 +9,7 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.domain.BoundingBox;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class InvalidBoundingBoxScheduler {
             log.info("Good news! No invalid bounding boxes :)");
             return;
         }
+        Collections.shuffle(invalidBoundingBoxes);
         venueService.quadTreeMine(invalidBoundingBoxes);
     }
 }
