@@ -63,7 +63,7 @@ public class FoursquareService implements VenueMiner {
                 try {
                     Result<CompactVenue> result = foursquareClient.apiCallDetails(venue.getId());
                     try {
-                        TimeUnit.MILLISECONDS.sleep(20);
+                        TimeUnit.MILLISECONDS.sleep(25);
                     } catch (InterruptedException e) {
                         log.warn("Foursquare API venues details thread sleep was interrupted, message {}", e.getMessage());
                     }
