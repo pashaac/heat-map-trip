@@ -52,6 +52,24 @@ public class BoundingBoxService {
                 .collect(Collectors.toList());
     }
 
+    public List<BoundingBox> getUniqueBoundingBox(List<BoundingBox> boundingBoxes) {
+        List<BoundingBox> uniqueBoundingBoxes = new ArrayList<>();
+
+        for (int i = 0; i < boundingBoxes.size(); i++) {
+            boolean match = false;
+            for (int j = i + 1; j < boundingBoxes.size(); j++) {
+                if (GeoEarthMathUtils.equalsShapes(boundingBoxes.get(i), boundingBoxes.get(j))) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                uniqueBoundingBoxes.add(boundingBoxes.get(i));
+            }
+        }
+        return uniqueBoundingBoxes;
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public BoundingBox save(BoundingBox boundingBox) {
         return boundingBoxRepository.save(boundingBox);

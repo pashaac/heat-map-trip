@@ -14,7 +14,6 @@ import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.BoundingBoxService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.service.VenueService;
 import ru.ifmo.pashaac.heat.map.trip.heatmaptrip.utils.GeoEarthMathUtils;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -41,7 +40,8 @@ public class BoundingBoxController {
     public List<BoundingBox> getInvalidBoundingBoxes(@RequestParam @ApiParam(value = "City id of the boundingbox collection", required = true) Long cityId,
                                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
-        return boundingBoxService.getBoundingBoxes(cityId, source, categories, false);
+        List<BoundingBox> boundingBoxes = boundingBoxService.getBoundingBoxes(cityId, source, categories, false);
+        return boundingBoxService.getUniqueBoundingBox(boundingBoxes);
     }
 
     @RequestMapping(value = "/valid", method = RequestMethod.GET)
@@ -50,20 +50,7 @@ public class BoundingBoxController {
                                                      @RequestParam @ApiParam(value = "Venues data source", required = true, allowableValues = "FOURSQUARE, GOOGLE") Source source,
                                                      @RequestParam @ApiParam(value = "Venues category list", required = true) List<String> categories) {
         List<BoundingBox> boundingBoxes = boundingBoxService.getBoundingBoxes(cityId, source, categories, true);
-        List<BoundingBox> uniqueBoundingBoxes = new ArrayList<>();
-        for (int i = 0; i < boundingBoxes.size(); i++) {
-            boolean match = false;
-            for (int j = i + 1; j < boundingBoxes.size(); j++) {
-                if (GeoEarthMathUtils.equalsShapes(boundingBoxes.get(i), boundingBoxes.get(j))) {
-                    match = true;
-                    break;
-                }
-            }
-            if (!match) {
-                uniqueBoundingBoxes.add(boundingBoxes.get(i));
-            }
-        }
-        return uniqueBoundingBoxes;
+        return boundingBoxService.getUniqueBoundingBox(boundingBoxes);
     }
 
     @RequestMapping(value = "/grid", method = RequestMethod.GET)
